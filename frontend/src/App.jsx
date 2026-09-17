@@ -52,10 +52,17 @@ function App() {
   const socketInstance = useRef(null);
   const fitAddonInstance = useRef(null);
 
+  // Helper to dynamically construct agent subdomain for cloud or local
+  const getAgentBaseUrl = (sId) => {
+    const host = window.location.hostname;
+    const baseDomain = host.includes('localhost') ? 'localhost' : host;
+    return `http://${sId}.agent.${baseDomain}`;
+  };
+
   // Fetch workspace file list
   const loadFilesList = async (sId) => {
     try {
-      const response = await fetch(`http://${sId}.agent.localhost/list-files`);
+      const response = await fetch(`${getAgentBaseUrl(sId)}/list-files`);
       if (response.ok) {
         const data = await response.json();
         setFilesList(data.files || []);
@@ -69,7 +76,7 @@ function App() {
   const handleOpenFile = async (filepath) => {
     try {
       const response = await fetch(
-        `http://${sandboxId}.agent.localhost/read-files?files=${encodeURIComponent(filepath)}`
+        `${getAgentBaseUrl(sandboxId)}/read-files?files=${encodeURIComponent(filepath)}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -97,7 +104,7 @@ function App() {
     if (!selectedFile || isSaving) return;
     setIsSaving(true);
     try {
-      const response = await fetch(`http://${sandboxId}.agent.localhost/update-files`, {
+      const response = await fetch(`${getAgentBaseUrl(sandboxId)}/update-files`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -132,7 +139,7 @@ function App() {
 
     const normalizedPath = newFilePath.trim().replace(/^\//, '');
     try {
-      const response = await fetch(`http://${sandboxId}.agent.localhost/create-files`, {
+      const response = await fetch(`${getAgentBaseUrl(sandboxId)}/create-files`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -295,7 +302,7 @@ function App() {
       updateStepStatus(3, 'completed');
       updateStepStatus(4, 'starting');
 
-      const agentCheckUrl = `http://${data.sandboxId}.agent.localhost/`;
+      const agentCheckUrl = `${getAgentBaseUrl(data.sandboxId)}/`;
       let retries = 5;
       let agentReady = false;
 
@@ -365,7 +372,7 @@ function App() {
       };
       window.addEventListener('resize', handleResize);
 
-      const socketUrl = `http://${sandboxId}.agent.localhost`;
+      const socketUrl = getAgentBaseUrl(sandboxId);
       const socket = io(socketUrl, {
         transports: ['websocket', 'polling']
       });

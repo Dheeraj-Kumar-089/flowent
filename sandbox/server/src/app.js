@@ -28,10 +28,14 @@ app.post("/api/sandbox/start", async (req, res) => {
         createService(sandboxId)
     ]);
 
+    const incomingHost = req.headers.host || 'localhost';
+    const domainOnly = incomingHost.split(':')[0];
+    const baseDomain = domainOnly.includes('localhost') ? 'localhost' : domainOnly;
+
     return res.status(201).json({
         message: "Sandbox environment created successfully",
         sandboxId,
-        previewUrl: `http://${sandboxId}.preview.localhost`
+        previewUrl: `http://${sandboxId}.preview.${baseDomain}`
     });
 });
 

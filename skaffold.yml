@@ -36,7 +36,10 @@ build:
     docker:
       dockerfile: dockerfile
 
-# first image will be created and then its deployment will happen, then next image will be created and then its deployment will happen, and so on
+  - image: frontend
+    context: frontend
+    docker:
+      dockerfile: dockerfile
 
 manifests:    # kin files ko run krna h taaki kubernetes ka cluster proper tarike se spin ho jaye
   rawYaml:
@@ -46,6 +49,8 @@ manifests:    # kin files ko run krna h taaki kubernetes ka cluster proper tarik
     - k8s/router-service.yml
     - k8s/sandbox-deployment.yml
     - k8s/sandbox-service.yml
+    - k8s/frontend-deployment.yml
+    - k8s/frontend-service.yml
     - k8s/ingress.yml
     - k8s/rbac.yml
     

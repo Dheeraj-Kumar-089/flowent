@@ -20,7 +20,7 @@ export async function createPod(sandboxId) {
             initContainers: [
                 {
                     name: 'init-container',
-                    image: "template",
+                    image: "template:latest",
                     imagePullPolicy: "IfNotPresent",
                     command: [ 'sh', '-c', 'cp -r /workspace/. /seed/' ],  // it will copy the vite files and folders to seed folder and sync it with workspace-volumne
                     volumeMounts: [
@@ -33,7 +33,7 @@ export async function createPod(sandboxId) {
             ],
             containers: [
                 {
-                    image: 'template',
+                    image: 'template:latest',
                     imagePullPolicy: 'IfNotPresent',
                     name: 'sandbox-container',
                     ports: [
@@ -44,12 +44,12 @@ export async function createPod(sandboxId) {
                     ],
                     resources: {
                         limits: {
-                            cpu: "500m",
-                            memory: "1Gi"
+                            cpu: "300m",
+                            memory: "512Mi"
                         },
                         requests: {
-                            cpu: "250m",
-                            memory: "500Mi"
+                            cpu: "50m",
+                            memory: "128Mi"
                         }
                     },
                     volumeMounts: [
@@ -60,7 +60,7 @@ export async function createPod(sandboxId) {
                     ],
                 },
                 {
-                    image: "agent",
+                    image: "agent:latest",
                     imagePullPolicy: "IfNotPresent",
                     name: "agent-container",
                     ports: [
@@ -71,12 +71,12 @@ export async function createPod(sandboxId) {
                     ],
                     resources: {
                         limits: {
-                            cpu: "500m",
-                            memory: "1Gi"
+                            cpu: "300m",
+                            memory: "512Mi"
                         },
                         requests: {
-                            cpu: "250m",
-                            memory: "500Mi"
+                            cpu: "50m",
+                            memory: "128Mi"
                         }
                     },
                     volumeMounts: [
@@ -85,7 +85,6 @@ export async function createPod(sandboxId) {
                             mountPath: '/workspace'
                         }
                     ],
-
                 }
             ]
         }

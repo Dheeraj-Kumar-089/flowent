@@ -15,7 +15,7 @@ spec:
         app:  ai-server
     spec:
       containers:
-      - image:  ai-orchestration
+      - image:  ai-orchestration:latest
         imagePullPolicy: IfNotPresent
         name:  ai-server
         resources:

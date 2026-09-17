@@ -31,13 +31,19 @@ spec:
             port: 
               number: 80
 
-  - http:
-      paths:
       - pathType: Prefix
         path: "/api/ai"
         backend:
           service:
             name: ai-service
+            port: 
+              number: 80
+
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: frontend-service
             port: 
               number: 80
 
@@ -53,6 +59,28 @@ spec:
               number: 80
 
   - host: "*.agent.localhost" 
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: router-service
+            port: 
+              number: 80
+
+  - host: "*.preview.3.110.151.177.nip.io"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: router-service
+            port: 
+              number: 80
+
+  - host: "*.agent.3.110.151.177.nip.io"
     http:
       paths:
       - pathType: Prefix
