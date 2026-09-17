@@ -1,0 +1,54 @@
+apiVersion: skaffold/v4beta13 
+kind: Config
+
+
+build:
+  tagPolicy:
+    sha256: {}
+
+  artifacts:  # total images to make
+
+  - image: ai-orchestration  # name of the image
+    context: ai-orchestration  # path to the dockerfile
+    docker:
+      dockerfile: dockerfile
+    sync:
+      infer:   # it will sync the folder
+        - "src/**"
+
+  - image: agent
+    context: sandbox/agent
+    docker:
+      dockerfile: dockerfile
+  
+  - image: router
+    context: sandbox/router
+    docker:
+      dockerfile: dockerfile
+
+  - image: sandbox
+    context: sandbox/server
+    docker:
+      dockerfile: dockerfile
+
+  - image: template
+    context: sandbox/template
+    docker:
+      dockerfile: dockerfile
+
+# first image will be created and then its deployment will happen, then next image will be created and then its deployment will happen, and so on
+
+manifests:    # kin files ko run krna h taaki kubernetes ka cluster proper tarike se spin ho jaye
+  rawYaml:
+    - k8s/ai-deployment.yml
+    - k8s/ai-service.yml
+    - k8s/router-deployment.yml
+    - k8s/router-service.yml
+    - k8s/sandbox-deployment.yml
+    - k8s/sandbox-service.yml
+    - k8s/ingress.yml
+    - k8s/rbac.yml
+    
+
+    
+  

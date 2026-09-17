@@ -1,0 +1,70 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flowent-ingress
+  annotations:
+    # Time in seconds to wait for a response from the pod
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "6000"
+    
+    # Time in seconds to wait for data to be sent to the pod
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "6000"
+    
+    # Time in seconds to establish a connection to the pod
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "6000"
+
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "route"
+    nginx.ingress.kubernetes.io/session-cookie-path: "/"               # websocket can connect multiple servers. but this line allow to connect only one server at a time
+
+  labels:
+    app.kubernetes.io/name: flowent-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - pathType: Prefix
+        path: "/api/sandbox"
+        backend:
+          service:
+            name: sandbox-service
+            port: 
+              number: 80
+
+  - http:
+      paths:
+      - pathType: Prefix
+        path: "/api/ai"
+        backend:
+          service:
+            name: ai-service
+            port: 
+              number: 80
+
+  - host: "*.preview.localhost"    ## ispe jo req aayega use router service pe forward kr denge
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: router-service
+            port: 
+              number: 80
+
+  - host: "*.agent.localhost" 
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: router-service
+            port: 
+              number: 80
+
+
+
+# it is telling that agar request /api/sandbox pe aayega to use 
+# sandbox service pe port 80 pe forward kr dena
+# - host: <Host>      ## by default it is localhost if you don't have a host name use 
