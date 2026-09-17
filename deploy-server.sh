@@ -9,7 +9,7 @@
 
 set -Eeuo pipefail
 
-PUBLIC_HOST="${PUBLIC_HOST:-3.110.151.177.nip.io}"
+PUBLIC_HOST="${PUBLIC_HOST:-13.204.81.229.nip.io}"
 ENV_FILE="${ENV_FILE:-$HOME/flowent.env}"
 REPO_DIR="${REPO_DIR:-$HOME/flowent}"
 REPO_URL="${REPO_URL:-https://github.com/Dheeraj-Kumar-089/flowent.git}"
@@ -37,12 +37,12 @@ echo "secrets loaded: ${#ENV_KEYS[@]} keys"
 command -v docker >/dev/null || fail "docker not installed"
 sudo k3s kubectl version --request-timeout=10s >/dev/null 2>&1 || fail "k3s not reachable"
 
-# k3s ships Traefik by default. Every manifest here uses ingressClassName: nginx,
-# so a missing ingress-nginx means the whole site 404s with healthy pods.
+# Ensure ingress-nginx is installed and bound to host ports 80/443
 if ! $K get ingressclass nginx >/dev/null 2>&1; then
-  fail "IngressClass 'nginx' not found. Install ingress-nginx first:
+  echo "Installing ingress-nginx..."
   $K apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/baremetal/deploy.yaml
-  ...then re-run this script."
+  $K patch deployment ingress-nginx-controller -n ingress-nginx --patch '{"spec":{"template":{"spec":{"hostNetwork":true}}}}'
+  $K wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=120s
 fi
 
 echo "free disk:"; df -h / | tail -1

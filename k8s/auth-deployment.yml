@@ -33,9 +33,9 @@ spec:
           # from proxy headers, which silently breaks the Google redirect_uri
           # match if any header is missing.
           - name: GOOGLE_CALLBACK_URL
-            value: "https://3.110.151.177.nip.io/api/auth/google/callback"
+            value: "https://13.204.81.229.nip.io/api/auth/google/callback"
           - name: PUBLIC_BASE_URL
-            value: "https://3.110.151.177.nip.io"
+            value: "https://13.204.81.229.nip.io"
           - name: MONGO_URI
             valueFrom:
               secretKeyRef:

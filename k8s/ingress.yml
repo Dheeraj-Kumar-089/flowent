@@ -26,10 +26,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - "3.110.151.177.nip.io"
-    - "*.3.110.151.177.nip.io"
-    - "*.preview.3.110.151.177.nip.io"
-    - "*.agent.3.110.151.177.nip.io"
+    - "13.204.81.229.nip.io"
+    - "*.13.204.81.229.nip.io"
+    - "*.preview.13.204.81.229.nip.io"
+    - "*.agent.13.204.81.229.nip.io"
     - "localhost"
     - "*.preview.localhost"
     - "*.agent.localhost"
@@ -37,7 +37,7 @@ spec:
   rules:
   # Sandbox preview and agent subdomains must be matched BEFORE the
   # host-less catch-all rule below.
-  - host: "*.preview.3.110.151.177.nip.io"
+  - host: "*.preview.13.204.81.229.nip.io"
     http:
       paths:
       - pathType: Prefix
@@ -48,7 +48,7 @@ spec:
             port:
               number: 80
 
-  - host: "*.agent.3.110.151.177.nip.io"
+  - host: "*.agent.13.204.81.229.nip.io"
     http:
       paths:
       - pathType: Prefix
