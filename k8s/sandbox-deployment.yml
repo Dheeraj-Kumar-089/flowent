@@ -21,22 +21,44 @@ spec:
           name: main-sandbox-container
           resources:
             limits:
-              cpu: "250m"
-              memory: "256Mi"
+              cpu: "300m"
+              memory: "384Mi"
             requests:
               cpu: "50m"
-              memory: "64Mi"
+              memory: "96Mi"
+          # These were missing entirely, so Redis TTL cleanup, Mongo and JWT
+          # verification all ran with undefined config.
+          env:
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: flowent-secrets
+                  key: MONGO_URI
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: flowent-secrets
+                  key: REDIS_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: flowent-secrets
+                  key: JWT_SECRET
           livenessProbe:
             httpGet:
               path: /api/sandbox/health
               port: 3000
-            initialDelaySeconds: 90
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 6
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /api/sandbox/health
               port: 3000
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 12
             timeoutSeconds: 10
           ports:
             - containerPort: 3000

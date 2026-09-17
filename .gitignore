@@ -62,3 +62,7 @@ coverage/
 kubeconfig
 *.kubeconfig
 .skaffold/
+
+# Server-side secret file consumed by deploy-server.sh
+flowent.env
+!flowent.env.example

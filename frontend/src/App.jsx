@@ -81,8 +81,9 @@ function App() {
   // Helper to dynamically construct agent subdomain for cloud or local
   const getAgentBaseUrl = (sId) => {
     const host = window.location.hostname;
+    const protocol = window.location.protocol;
     const baseDomain = host.includes('localhost') ? 'localhost' : host;
-    return `http://${sId}.agent.${baseDomain}`;
+    return `${protocol}//${sId}.agent.${baseDomain}`;
   };
 
   // Fetch workspace file list

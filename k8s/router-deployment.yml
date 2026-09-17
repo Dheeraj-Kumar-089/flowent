@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name:  router-deployment
+  name: router-deployment
   labels:
-    name:  router-deployment
+    name: router-deployment
 spec:
   replicas: 1
   selector:
@@ -11,32 +11,36 @@ spec:
       app: router
   template:
     metadata:
-      labels:          # it should be correctly matching
-        app:  router  
+      labels:
+        app: router
     spec:
       containers:
-      - image:  router:latest
+      - image: router:latest
         imagePullPolicy: IfNotPresent
-        name:  router-server
+        name: router-server
         resources:
           requests:
             cpu: "50m"
-            memory: "64Mi"
+            memory: "96Mi"
           limits:
-            cpu: "250m"
-            memory: "256Mi"
+            cpu: "300m"
+            memory: "320Mi"
         livenessProbe:
           httpGet:
             path: /api/status/healthz
             port: 3000
-          initialDelaySeconds: 90
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          failureThreshold: 6
           timeoutSeconds: 10
         readinessProbe:
           httpGet:
             path: /api/status/readyz
             port: 3000
-          initialDelaySeconds: 30
-          timeoutSeconds: 10      
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          failureThreshold: 12
+          timeoutSeconds: 10
         ports:
-        - containerPort:  3000
-          name:  my-name
+        - containerPort: 3000
+          name: router-http

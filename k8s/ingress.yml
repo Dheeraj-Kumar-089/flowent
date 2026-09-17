@@ -3,18 +3,22 @@ kind: Ingress
 metadata:
   name: flowent-ingress
   annotations:
-    # Time in seconds to wait for a response from the pod
     nginx.ingress.kubernetes.io/proxy-read-timeout: "6000"
-    
-    # Time in seconds to wait for data to be sent to the pod
     nginx.ingress.kubernetes.io/proxy-send-timeout: "6000"
-    
-    # Time in seconds to establish a connection to the pod
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "6000"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+
+    # Server-Sent Events from /api/ai/invoke are swallowed by nginx's response
+    # buffer until the stream ends. Without these the chat looks frozen.
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+
+    # AI file writes routinely exceed the 1m default and fail with 413.
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
 
     nginx.ingress.kubernetes.io/affinity: "cookie"
     nginx.ingress.kubernetes.io/session-cookie-name: "route"
-    nginx.ingress.kubernetes.io/session-cookie-path: "/"               # websocket can connect multiple servers. but this line allow to connect only one server at a time
+    nginx.ingress.kubernetes.io/session-cookie-path: "/"
 
   labels:
     app.kubernetes.io/name: flowent-ingress
@@ -23,6 +27,7 @@ spec:
   tls:
   - hosts:
     - "3.110.151.177.nip.io"
+    - "*.3.110.151.177.nip.io"
     - "*.preview.3.110.151.177.nip.io"
     - "*.agent.3.110.151.177.nip.io"
     - "localhost"
@@ -30,70 +35,8 @@ spec:
     - "*.agent.localhost"
     secretName: flowent-tls-secret
   rules:
-  - http:
-      paths:
-      - pathType: Prefix
-        path: "/api/sandbox"
-        backend:
-          service:
-            name: sandbox-service
-            port: 
-              number: 80
-
-      - pathType: Prefix
-        path: "/api/ai"
-        backend:
-          service:
-            name: ai-service
-            port: 
-              number: 80
-
-      - pathType: Prefix
-        path: "/api/auth"
-        backend:
-          service:
-            name: auth-service
-            port: 
-              number: 80
-
-      - pathType: Prefix
-        path: "/auth"
-        backend:
-          service:
-            name: auth-service
-            port: 
-              number: 80
-
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: frontend-service
-            port: 
-              number: 80
-
-  - host: "*.preview.localhost"    ## ispe jo req aayega use router service pe forward kr denge
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: router-service
-            port: 
-              number: 80
-
-  - host: "*.agent.localhost" 
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: router-service
-            port: 
-              number: 80
-
+  # Sandbox preview and agent subdomains must be matched BEFORE the
+  # host-less catch-all rule below.
   - host: "*.preview.3.110.151.177.nip.io"
     http:
       paths:
@@ -102,7 +45,7 @@ spec:
         backend:
           service:
             name: router-service
-            port: 
+            port:
               number: 80
 
   - host: "*.agent.3.110.151.177.nip.io"
@@ -113,11 +56,69 @@ spec:
         backend:
           service:
             name: router-service
-            port: 
+            port:
               number: 80
 
+  - host: "*.preview.localhost"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: router-service
+            port:
+              number: 80
 
+  - host: "*.agent.localhost"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: router-service
+            port:
+              number: 80
 
-# it is telling that agar request /api/sandbox pe aayega to use 
-# sandbox service pe port 80 pe forward kr dena
-# - host: <Host>      ## by default it is localhost if you don't have a host name use 
+  - http:
+      paths:
+      - pathType: Prefix
+        path: "/api/sandbox"
+        backend:
+          service:
+            name: sandbox-service
+            port:
+              number: 80
+
+      - pathType: Prefix
+        path: "/api/ai"
+        backend:
+          service:
+            name: ai-service
+            port:
+              number: 80
+
+      - pathType: Prefix
+        path: "/api/auth"
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+
+      - pathType: Prefix
+        path: "/auth"
+        backend:
+          service:
+            name: auth-service
+            port:
+              number: 80
+
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80

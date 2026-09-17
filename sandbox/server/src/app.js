@@ -1,7 +1,8 @@
 import express from "express";
 import morgan from "morgan";
-import { createPod } from "./kubernetes/pod.js";
-import { createService } from "./kubernetes/service.js";
+import { createPod, deletePod } from "./kubernetes/pod.js";
+import { createService, deleteService } from "./kubernetes/service.js";
+import { createSandboxKey, refreshSandboxKey } from "./config/redis.js";
 import { v7 as uuid } from "uuid";
 
 const app = express();
@@ -29,29 +30,38 @@ app.get('/api/sandbox/health', (req, res) => {
 });
 
 app.post("/api/sandbox/start", async (req, res) => {
+    const sandboxId = uuid();
     try {
-        const sandboxId = uuid();
-
         console.log(`[Sandbox Server] Starting creation for sandboxId: ${sandboxId}`);
 
+        // Pod and Service must both exist; the TTL key is best-effort so a
+        // Redis outage cannot block sandbox creation.
         await Promise.all([
             createPod(sandboxId),
             createService(sandboxId)
         ]);
+        await createSandboxKey(sandboxId);
 
-        console.log(`[Sandbox Server] Successfully created Pod and Service for sandboxId: ${sandboxId}`);
+        console.log(`[Sandbox Server] Created Pod and Service for sandboxId: ${sandboxId}`);
 
+        const protocol = req.headers[ 'x-forwarded-proto' ] || (req.secure ? 'https' : 'http');
         const incomingHost = req.headers.host || 'localhost';
-        const domainOnly = incomingHost.split(':')[0];
+        const domainOnly = incomingHost.split(':')[ 0 ];
         const baseDomain = domainOnly.includes('localhost') ? 'localhost' : domainOnly;
 
         return res.status(201).json({
             message: "Sandbox environment created successfully",
             sandboxId,
-            previewUrl: `http://${sandboxId}.preview.${baseDomain}`
+            previewUrl: `${protocol}://${sandboxId}.preview.${baseDomain}`
         });
     } catch (err) {
         console.error("[Sandbox Server] Error spinning up sandbox in cluster:", err);
+
+        // Roll back partial creation so orphaned pods/services do not pile up
+        // and exhaust the node.
+        await deletePod(sandboxId).catch(() => {});
+        await deleteService(sandboxId).catch(() => {});
+
         const errorDetails = err.response?.body || err.body || err.message;
         return res.status(500).json({
             message: "Could not spin up sandbox in the cluster",
@@ -59,6 +69,20 @@ app.post("/api/sandbox/start", async (req, res) => {
             details: errorDetails
         });
     }
+});
+
+// Keeps a sandbox alive while the user is actively working in it.
+app.post("/api/sandbox/keepalive/:sandboxId", async (req, res) => {
+    await refreshSandboxKey(req.params.sandboxId);
+    return res.status(200).json({ status: "ok" });
+});
+
+// Explicit teardown so abandoned sandboxes are not left to the TTL alone.
+app.delete("/api/sandbox/:sandboxId", async (req, res) => {
+    const { sandboxId } = req.params;
+    await deletePod(sandboxId);
+    await deleteService(sandboxId);
+    return res.status(200).json({ message: "Sandbox destroyed", sandboxId });
 });
 
 export default app;

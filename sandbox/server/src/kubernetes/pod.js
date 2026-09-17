@@ -10,6 +10,7 @@ export async function createPod(sandboxId) {
             }
         },
         spec: {
+            restartPolicy: 'Always',
             volumes: [
                 {
                     name: 'workspace-volume',
@@ -21,7 +22,11 @@ export async function createPod(sandboxId) {
                     name: 'init-container',
                     image: "template:latest",
                     imagePullPolicy: "IfNotPresent",
-                    command: ['sh', '-c', 'cp -r /workspace/. /seed/'],
+                    command: [ 'sh', '-c', 'cp -a /workspace/. /seed/' ],
+                    resources: {
+                        limits: { cpu: "500m", memory: "256Mi" },
+                        requests: { cpu: "50m", memory: "64Mi" }
+                    },
                     volumeMounts: [
                         {
                             name: 'workspace-volume',
@@ -38,17 +43,20 @@ export async function createPod(sandboxId) {
                     ports: [
                         {
                             containerPort: 5173,
-                            name: "http"
+                            // Port names must be unique across ALL containers in a pod.
+                            // Naming both containers' ports "http" made the API server
+                            // reject every sandbox pod with a Duplicate value error.
+                            name: "preview"
                         }
                     ],
                     resources: {
                         limits: {
-                            cpu: "300m",
-                            memory: "512Mi"
+                            cpu: "500m",
+                            memory: "640Mi"
                         },
                         requests: {
                             cpu: "50m",
-                            memory: "128Mi"
+                            memory: "192Mi"
                         }
                     },
                     volumeMounts: [
@@ -65,17 +73,17 @@ export async function createPod(sandboxId) {
                     ports: [
                         {
                             containerPort: 3000,
-                            name: "http",
+                            name: "agent",
                         }
                     ],
                     resources: {
                         limits: {
                             cpu: "300m",
-                            memory: "512Mi"
+                            memory: "384Mi"
                         },
                         requests: {
                             cpu: "50m",
-                            memory: "128Mi"
+                            memory: "96Mi"
                         }
                     },
                     volumeMounts: [
@@ -95,7 +103,34 @@ export async function createPod(sandboxId) {
             body: podManifest
         });
     } catch (err) {
-        // Fallback for older positional parameter client versions
+        // Surface real API-server rejections instead of masking them behind a
+        // second failing call against the legacy positional signature.
+        const apiMessage = err?.body?.message || err?.response?.body?.message;
+        if (apiMessage) {
+            console.error('[k8s] createPod rejected by API server:', apiMessage);
+            throw err;
+        }
         return await k8sCoreV1Api.createNamespacedPod('default', podManifest);
+    }
+}
+
+// Previously missing: config/redis.js imported deletePod from this module,
+// which made the TTL-expiry cleanup path throw on import.
+export async function deletePod(sandboxId) {
+    const name = `sandbox-pod-${sandboxId}`;
+    try {
+        return await k8sCoreV1Api.deleteNamespacedPod({ namespace: 'default', name });
+    } catch (err) {
+        const apiMessage = err?.body?.message || err?.response?.body?.message;
+        if (apiMessage) {
+            console.error('[k8s] deletePod failed:', apiMessage);
+            return null;
+        }
+        try {
+            return await k8sCoreV1Api.deleteNamespacedPod(name, 'default');
+        } catch (e) {
+            console.error('[k8s] deletePod failed:', e.message);
+            return null;
+        }
     }
 }

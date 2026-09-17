@@ -23,51 +23,57 @@ spec:
           name: auth-port
         resources:
           requests:
-            cpu: "30m"
-            memory: "64Mi"
+            cpu: "50m"
+            memory: "96Mi"
           limits:
-            cpu: "250m"
-            memory: "256Mi"
+            cpu: "300m"
+            memory: "320Mi"
         env:
+          # Explicit absolute callback URL. Without it passport derives the URL
+          # from proxy headers, which silently breaks the Google redirect_uri
+          # match if any header is missing.
+          - name: GOOGLE_CALLBACK_URL
+            value: "https://3.110.151.177.nip.io/api/auth/google/callback"
+          - name: PUBLIC_BASE_URL
+            value: "https://3.110.151.177.nip.io"
           - name: MONGO_URI
             valueFrom:
               secretKeyRef:
                 name: flowent-secrets
                 key: MONGO_URI
-                optional: true
           - name: JWT_SECRET
             valueFrom:
               secretKeyRef:
                 name: flowent-secrets
                 key: JWT_SECRET
-                optional: true
           - name: GOOGLE_OAUTH_CLIENT_ID
             valueFrom:
               secretKeyRef:
                 name: flowent-secrets
                 key: GOOGLE_OAUTH_CLIENT_ID
-                optional: true
           - name: GOOGLE_OAUTH_CLIENT_SECRET
             valueFrom:
               secretKeyRef:
                 name: flowent-secrets
                 key: GOOGLE_OAUTH_CLIENT_SECRET
-                optional: true
           - name: REDIS_URL
             valueFrom:
               secretKeyRef:
                 name: flowent-secrets
                 key: REDIS_URL
-                optional: true
         livenessProbe:
           httpGet:
             path: /_status/healthz
             port: 3000
           initialDelaySeconds: 60
+          periodSeconds: 20
+          failureThreshold: 6
           timeoutSeconds: 10
         readinessProbe:
           httpGet:
             path: /_status/readyz
             port: 3000
-          initialDelaySeconds: 20
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          failureThreshold: 12
           timeoutSeconds: 10
