@@ -20,6 +20,15 @@ metadata:
     app.kubernetes.io/name: flowent-ingress
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - "3.110.151.177.nip.io"
+    - "*.preview.3.110.151.177.nip.io"
+    - "*.agent.3.110.151.177.nip.io"
+    - "localhost"
+    - "*.preview.localhost"
+    - "*.agent.localhost"
+    secretName: flowent-tls-secret
   rules:
   - http:
       paths:
