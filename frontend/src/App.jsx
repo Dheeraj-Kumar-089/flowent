@@ -13,6 +13,7 @@ import TerminalConsole from './components/TerminalConsole';
 import AIChat from './components/AIChat';
 
 function App() {
+  const [user, setUser] = useState(null);
   const [sandboxId, setSandboxId] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [status, setStatus] = useState('idle'); // 'idle' | 'starting' | 'ready' | 'error'
@@ -23,6 +24,31 @@ function App() {
     { id: 4, label: 'Bootstrapping local developer agent', status: 'pending' }
   ]);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Check auth session on load
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.loggedIn && data.user) {
+          setUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleLogin = () => {
+    window.location.href = '/api/auth/google';
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setUser(null);
+    } catch (e) {
+      setUser(null);
+    }
+  };
 
   // Workspace layout states
   const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'files'
@@ -303,7 +329,7 @@ function App() {
       updateStepStatus(4, 'starting');
 
       const agentCheckUrl = `${getAgentBaseUrl(data.sandboxId)}/`;
-      let retries = 5;
+      let retries = 15;
       let agentReady = false;
 
       while (retries > 0 && !agentReady) {
@@ -429,9 +455,14 @@ function App() {
   return (
     <div className="w-full h-full flex flex-col bg-bg-base text-[#e3e1e9] overflow-hidden font-sans">
       
-      {/* 1. IDLE STATE: Enhanced Landing Page */}
+      {/* 1. IDLE STATE: Enhanced Landing Page with Auth */}
       {status === 'idle' && (
-        <LandingPage onStartSandbox={handleStartSandbox} />
+        <LandingPage
+          onStartSandbox={handleStartSandbox}
+          user={user}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+        />
       )}
 
       {/* 2. STARTING STATE: Launch Progress Screen with Progress Line */}

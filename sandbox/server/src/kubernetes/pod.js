@@ -1,13 +1,12 @@
 import { k8sCoreV1Api } from "./config.js";
 
-
 export async function createPod(sandboxId) {
-
     const podManifest = {
         metadata: {
             name: 'sandbox-pod-' + sandboxId,
             labels: {
-                sandboxId: sandboxId
+                sandboxId: sandboxId,
+                app: 'sandbox'
             }
         },
         spec: {
@@ -22,7 +21,7 @@ export async function createPod(sandboxId) {
                     name: 'init-container',
                     image: "template:latest",
                     imagePullPolicy: "IfNotPresent",
-                    command: [ 'sh', '-c', 'cp -r /workspace/. /seed/' ],  // it will copy the vite files and folders to seed folder and sync it with workspace-volumne
+                    command: ['sh', '-c', 'cp -r /workspace/. /seed/'],
                     volumeMounts: [
                         {
                             name: 'workspace-volume',
@@ -90,10 +89,13 @@ export async function createPod(sandboxId) {
         }
     };
 
-    const response = await k8sCoreV1Api.createNamespacedPod({
-        namespace: 'default',
-        body: podManifest
-    });
-
-    return response;
+    try {
+        return await k8sCoreV1Api.createNamespacedPod({
+            namespace: 'default',
+            body: podManifest
+        });
+    } catch (err) {
+        // Fallback for older positional parameter client versions
+        return await k8sCoreV1Api.createNamespacedPod('default', podManifest);
+    }
 }

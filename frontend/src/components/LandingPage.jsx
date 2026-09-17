@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export default function LandingPage({ onStartSandbox }) {
+export default function LandingPage({ onStartSandbox, user, onLogin, onLogout }) {
   const canvasRef = useRef(null);
 
   // Background particle system animation
@@ -93,20 +93,51 @@ export default function LandingPage({ onStartSandbox }) {
           </div>
           <span className="font-extrabold text-xl tracking-tight text-white">flowent</span>
           <span className="font-mono text-[9px] bg-brand-purple/10 text-brand-purple px-2 py-0.5 rounded-full border border-brand-purple/20 font-bold uppercase tracking-wider">
-            IDE v1.0
+            Cloud IDE
           </span>
         </div>
-        <div className="hidden md:flex gap-8 text-sm text-on-surface-variant font-medium">
-          <a className="hover:text-white transition-colors py-1" href="#features">Features</a>
-          <a className="hover:text-white transition-colors py-1" href="#sandbox">Sandbox</a>
-          <a className="hover:text-white transition-colors py-1" href="#docs">Docs</a>
+
+        <div className="flex items-center gap-4">
+          {user ? (
+            <div className="flex items-center gap-3 bg-[#1a1b21]/80 border border-white/10 px-3 py-1.5 rounded-xl">
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.name} className="w-6 h-6 rounded-full border border-white/20 object-cover" />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-brand-purple text-white text-xs flex items-center justify-center font-bold">
+                  {user.name?.charAt(0) || 'U'}
+                </div>
+              )}
+              <span className="text-xs text-white font-medium max-w-[120px] truncate">{user.name}</span>
+              <button
+                onClick={onLogout}
+                className="text-[11px] text-zinc-400 hover:text-red-400 font-medium transition-colors cursor-pointer ml-1"
+                title="Log out"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onLogin}
+              className="flex items-center gap-2 bg-[#1a1b21] hover:bg-[#25262c] text-white border border-white/10 px-4 py-2 text-xs font-semibold rounded-lg active:scale-95 transition-all shadow-md cursor-pointer"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+                <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.8 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+                <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.8-2.5 1.3-4.3 1.3-3 0-5.5-2-6.4-4.8L1.9 16.5C3.7 20.4 7.5 23 12 23z"/>
+              </svg>
+              Sign in with Google
+            </button>
+          )}
+
+          <button
+            onClick={onStartSandbox}
+            className="bg-brand-purple hover:bg-[#685ad6] text-white px-4 py-2 text-xs font-semibold rounded-lg active:scale-95 transition-all shadow-md shadow-brand-purple/10 cursor-pointer"
+          >
+            Launch IDE
+          </button>
         </div>
-        <button
-          onClick={onStartSandbox}
-          className="bg-brand-purple hover:bg-[#685ad6] text-white px-4 py-2 text-xs font-semibold rounded-lg active:scale-95 transition-all shadow-md shadow-brand-purple/10 cursor-pointer"
-        >
-          Launch IDE
-        </button>
       </nav>
 
       {/* Center Landing Main Content */}
@@ -149,16 +180,31 @@ export default function LandingPage({ onStartSandbox }) {
             </div>
           </div>
 
-          {/* Primary Action Button - STRICTLY SOLID, NO GRADIENTS */}
-          <button
-            onClick={onStartSandbox}
-            className="px-8 py-4 bg-[#7c6ff7] hover:bg-[#6659e5] active:scale-98 text-white font-bold rounded-lg text-base transition-all shadow-lg shadow-brand-purple/20 cursor-pointer flex items-center gap-2"
-          >
-            <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-            Start Sandbox Environment
-          </button>
+          {/* Primary Action Button */}
+          {user ? (
+            <button
+              onClick={onStartSandbox}
+              className="px-8 py-4 bg-[#7c6ff7] hover:bg-[#6659e5] active:scale-98 text-white font-bold rounded-lg text-base transition-all shadow-lg shadow-brand-purple/20 cursor-pointer flex items-center gap-2"
+            >
+              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              Start Sandbox Environment
+            </button>
+          ) : (
+            <button
+              onClick={onLogin}
+              className="px-8 py-4 bg-white hover:bg-zinc-100 active:scale-98 text-zinc-900 font-bold rounded-lg text-base transition-all shadow-lg cursor-pointer flex items-center gap-3"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+                <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.8s.2-2.1.4-2.8L1.9 6.3C.7 8.7 0 10.8 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+                <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.8-2.5 1.3-4.3 1.3-3 0-5.5-2-6.4-4.8L1.9 16.5C3.7 20.4 7.5 23 12 23z"/>
+              </svg>
+              Sign In with Google to Start
+            </button>
+          )}
         </div>
       </main>
 
