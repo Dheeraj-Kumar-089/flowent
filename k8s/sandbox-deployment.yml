@@ -21,11 +21,11 @@ spec:
           name: main-sandbox-container
           resources:
             limits:
-              cpu: "500m"
-              memory: "400Mi"
-            requests:
               cpu: "250m"
-              memory: "200Mi"
+              memory: "256Mi"
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
           livenessProbe:
             httpGet:
               path: /api/sandbox/health

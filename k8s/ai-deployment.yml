@@ -5,7 +5,7 @@ metadata:
   labels:
     name:  ai-deployment
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: ai-server
@@ -16,20 +16,28 @@ spec:
     spec:
       containers:
       - image:  ai-orchestration
+        imagePullPolicy: IfNotPresent
         name:  ai-server
         resources:
           requests:
-            cpu: "250m"
-            memory: "128M"
+            cpu: "50m"
+            memory: "64Mi"
           limits:
-            cpu: "500m"
-            memory: "256M"
+            cpu: "250m"
+            memory: "256Mi"
         env:
           - name: GEMINI_API_KEY
             valueFrom:
               secretKeyRef:
-                name: gemini-ai-secret
+                name: flowent-secrets
                 key: GEMINI_API_KEY
+                optional: true
+          - name: OPENAI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: flowent-secrets
+                key: OPENAI_API_KEY
+                optional: true
         livenessProbe:
           httpGet:
             path: /api/status/healthz
