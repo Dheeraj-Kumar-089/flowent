@@ -68,6 +68,13 @@ ptyProcess.onExit(({ exitCode, signal }) => {
 io.on("connection",(socket)=>{
     console.log(`Client connected: ${socket.id}`);
 
+    // Trigger initial prompt display
+    setTimeout(() => {
+        try {
+            ptyProcess.write('\r');
+        } catch (e) {}
+    }, 200);
+
     // data on terminal will comes through this socketio event
     socket.on("terminal-input",(data)=>{
         ptyProcess.write(data);
