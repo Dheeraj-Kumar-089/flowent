@@ -11,6 +11,9 @@ export async function createPod(sandboxId) {
         },
         spec: {
             restartPolicy: 'Always',
+            imagePullSecrets: [
+                { name: 'ecr-secret' }
+            ],
             volumes: [
                 {
                     name: 'workspace-volume',
@@ -20,7 +23,7 @@ export async function createPod(sandboxId) {
             initContainers: [
                 {
                     name: 'init-container',
-                    image: "docker.io/library/template:latest",
+                    image: "360821545863.dkr.ecr.ap-south-1.amazonaws.com/flowent-template:latest",
                     imagePullPolicy: "IfNotPresent",
                     command: [ 'sh', '-c', 'cp -a /workspace/. /seed/' ],
                     resources: {
@@ -37,7 +40,7 @@ export async function createPod(sandboxId) {
             ],
             containers: [
                 {
-                    image: 'docker.io/library/template:latest',
+                    image: '360821545863.dkr.ecr.ap-south-1.amazonaws.com/flowent-template:latest',
                     imagePullPolicy: 'IfNotPresent',
                     name: 'sandbox-container',
                     ports: [
@@ -67,7 +70,7 @@ export async function createPod(sandboxId) {
                     ],
                 },
                 {
-                    image: "docker.io/library/agent:latest",
+                    image: "360821545863.dkr.ecr.ap-south-1.amazonaws.com/flowent-agent:latest",
                     imagePullPolicy: "IfNotPresent",
                     name: "agent-container",
                     ports: [

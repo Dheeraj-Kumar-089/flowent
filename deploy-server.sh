@@ -88,25 +88,32 @@ sudo docker image prune -f >/dev/null 2>&1 || true
 
 # ---------------------------------------------------------------- 5. build
 log "5. Building and importing images"
+ECR_REGISTRY="360821545863.dkr.ecr.ap-south-1.amazonaws.com"
 build() {
-  local name="$1" ctx="$2"
-  echo "--- $name"
-  sudo docker build -q -t "$name:latest" "$ctx" \
-    || fail "docker build failed for $name (context: $ctx)"
-  sudo docker save "$name:latest" | sudo k3s ctr -n k8s.io images import - >/dev/null \
-    || fail "ctr import failed for $name"
+  local tag_name="$1" ctx="$2"
+  local ecr_tag="${ECR_REGISTRY}/flowent-${tag_name}:latest"
+  echo "--- $tag_name ($ecr_tag)"
+  sudo docker build -q -t "$tag_name:latest" -t "$ecr_tag" "$ctx" \
+    || fail "docker build failed for $tag_name (context: $ctx)"
+  sudo docker save "$ecr_tag" | sudo k3s ctr -n k8s.io images import - >/dev/null \
+    || fail "ctr import failed for $tag_name"
 }
-build ai-orchestration ./ai-orchestration
-build sandbox          ./sandbox/server
-build router           ./sandbox/router
-build agent            ./sandbox/agent
-build template         ./sandbox/template
-build auth             ./auth
-build frontend         ./frontend
+build ai       ./ai-orchestration
+build sandbox  ./sandbox/server
+build router   ./sandbox/router
+build agent    ./sandbox/agent
+build template ./sandbox/template
+build auth     ./auth
+build frontend ./frontend
 
 # ---------------------------------------------------------------- 6. apply
 log "6. Applying manifests"
+if [ -f "scripts/refresh-ecr-token.sh" ]; then
+  chmod +x scripts/refresh-ecr-token.sh
+  ./scripts/refresh-ecr-token.sh || true
+fi
 $K apply -f k8s/rbac.yml
+$K apply -f k8s/seed-images.yml
 $K apply -f k8s/auth-deployment.yml     -f k8s/auth-service.yml
 $K apply -f k8s/ai-deployment.yml       -f k8s/ai-service.yml
 $K apply -f k8s/sandbox-deployment.yml  -f k8s/sandbox-service.yml

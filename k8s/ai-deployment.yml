@@ -14,8 +14,10 @@ spec:
       labels:
         app: ai-server
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
-      - image: ai-orchestration:latest
+      - image: 360821545863.dkr.ecr.ap-south-1.amazonaws.com/flowent-ai:latest
         imagePullPolicy: IfNotPresent
         name: ai-server
         resources:

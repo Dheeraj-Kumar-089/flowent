@@ -14,8 +14,10 @@ spec:
       labels:
         app: router
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
-      - image: router:latest
+      - image: 360821545863.dkr.ecr.ap-south-1.amazonaws.com/flowent-router:latest
         imagePullPolicy: IfNotPresent
         name: router-server
         resources:

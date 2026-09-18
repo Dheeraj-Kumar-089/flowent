@@ -122,10 +122,9 @@ server.on('upgrade', (req, socket, head) => {
         if (match) {
             const sandboxId = match[1];
             req.url = match[2] || '/';
-            const agentProxy = getAgentProxy(sandboxId);
-            if (agentProxy && typeof agentProxy.upgrade === 'function') {
-                return agentProxy.upgrade(req, socket, head);
-            }
+            return wsProxy.ws(req, socket, head, {
+                target: `http://sandbox-service-${sandboxId}:3000`
+            });
         }
     }
 
@@ -137,15 +136,13 @@ server.on('upgrade', (req, socket, head) => {
     const type = parts[1];
 
     if (type === 'agent') {
-        const agentProxy = getAgentProxy(sandboxId);
-        if (agentProxy && typeof agentProxy.upgrade === 'function') {
-            return agentProxy.upgrade(req, socket, head);
-        }
+        return wsProxy.ws(req, socket, head, {
+            target: `http://sandbox-service-${sandboxId}:3000`
+        });
     } else if (type === 'preview') {
-        const previewProxy = getProxy(sandboxId);
-        if (previewProxy && typeof previewProxy.upgrade === 'function') {
-            return previewProxy.upgrade(req, socket, head);
-        }
+        return wsProxy.ws(req, socket, head, {
+            target: `http://sandbox-service-${sandboxId}`
+        });
     } else {
         socket.destroy();
     }

@@ -12,10 +12,12 @@ spec:
       labels:
         app: sandbox-images-cache
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
         - name: template-pin
-          image: docker.io/library/template:latest
-          imagePullPolicy: Never
+          image: 360821545863.dkr.ecr.ap-south-1.amazonaws.com/flowent-template:latest
+          imagePullPolicy: IfNotPresent
           command: ["sh", "-c", "while true; do sleep 3600; done"]
           resources:
             requests:
@@ -25,8 +27,8 @@ spec:
               cpu: "20m"
               memory: "32Mi"
         - name: agent-pin
-          image: docker.io/library/agent:latest
-          imagePullPolicy: Never
+          image: 360821545863.dkr.ecr.ap-south-1.amazonaws.com/flowent-agent:latest
+          imagePullPolicy: IfNotPresent
           command: ["sh", "-c", "while true; do sleep 3600; done"]
           resources:
             requests:

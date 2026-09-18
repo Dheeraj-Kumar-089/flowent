@@ -14,9 +14,11 @@ spec:
       labels:
         app: frontend
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
       - name: frontend
-        image: frontend:latest
+        image: 360821545863.dkr.ecr.ap-south-1.amazonaws.com/flowent-frontend:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80

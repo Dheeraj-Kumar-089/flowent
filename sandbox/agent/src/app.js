@@ -40,50 +40,80 @@ app.get("/",(req,res)=>{
     })
 })
 
-// creates a shell. it means it creates a bash terminal. now if you want to use any other shell you can change it here. just like if you want to use zsh then change it to zsh.
-const shell = process.env.SHELL || 'bash';
+const getShell = () => {
+    if (os.platform() === 'win32') return 'powershell.exe';
+    if (fs.existsSync('/bin/bash')) return '/bin/bash';
+    if (fs.existsSync('/bin/sh')) return '/bin/sh';
+    return process.env.SHELL || 'sh';
+};
 
-//Spawn the pty process
-// pty.spawn is used to create a pseudo terminal. it is used to create a terminal in which we can run commands. 
-// it is used to create a terminal in which we can run commands. 
-const ptyProcess = pty.spawn(shell,[],{
-    name:'xterm-color',
-    cols:80,
-    rows:30,
-    cwd: "/workspace",    // working directory will be workspace
-    env: process.env,
-});
+const shell = getShell();
 
-//  if terminal gives some output then you get it in this ptyprocess.on(data) and emit it to client
-ptyProcess.onData((data)=>{
-    io.emit("terminal-output",data);
-});
+let ptyProcess = null;
 
-// it is used to show the error when terminal exit
-ptyProcess.onExit(({ exitCode, signal }) => {
-    console.log(`PTY process exited with code: ${exitCode}, signal: ${signal}`);
-});
+function spawnPty() {
+    try {
+        ptyProcess = pty.spawn(shell, [], {
+            name: 'xterm-color',
+            cols: 80,
+            rows: 30,
+            cwd: fs.existsSync(WORKING_DIR) ? WORKING_DIR : process.cwd(),
+            env: {
+                ...process.env,
+                TERM: 'xterm-256color',
+                COLORTERM: 'truecolor',
+                PATH: process.env.PATH || '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+            }
+        });
 
-// if client gives some input on terminal then you get it in this socket.on(terminal-input) and write it to the ptyprocess
-io.on("connection",(socket)=>{
+        ptyProcess.onData((data) => {
+            io.emit("terminal-output", data);
+        });
+
+        ptyProcess.onExit(({ exitCode, signal }) => {
+            console.log(`PTY process exited with code: ${exitCode}, signal: ${signal}`);
+            ptyProcess = null;
+        });
+    } catch (err) {
+        console.error('Failed to spawn PTY process:', err.message);
+    }
+}
+
+spawnPty();
+
+io.on("connection", (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
-    // Trigger initial prompt display
+    if (!ptyProcess) {
+        spawnPty();
+    }
+
     setTimeout(() => {
         try {
-            ptyProcess.write('\r');
+            if (ptyProcess) {
+                ptyProcess.write('\r');
+            }
         } catch (e) {}
     }, 200);
 
-    // data on terminal will comes through this socketio event
-    socket.on("terminal-input",(data)=>{
-        ptyProcess.write(data);
-    })
+    socket.on("terminal-input", (data) => {
+        if (!ptyProcess) {
+            spawnPty();
+        }
+        if (ptyProcess) {
+            try {
+                ptyProcess.write(data);
+            } catch (err) {
+                console.error("Error writing to PTY:", err.message);
+            }
+        }
+    });
 
-    socket.on("disconnect",()=>{
+    socket.on("disconnect", () => {
         console.log(`Client disconnected: ${socket.id}`);
     });
 });
+
 
 
 /**

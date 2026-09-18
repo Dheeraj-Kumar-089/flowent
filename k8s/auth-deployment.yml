@@ -14,9 +14,11 @@ spec:
       labels:
         app: auth
     spec:
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
       - name: auth-server
-        image: auth:latest
+        image: 360821545863.dkr.ecr.ap-south-1.amazonaws.com/flowent-auth:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000

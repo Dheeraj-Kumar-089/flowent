@@ -15,8 +15,10 @@ spec:
         app: sandbox-server
     spec:
       serviceAccountName: resource-manager
+      imagePullSecrets:
+        - name: ecr-secret
       containers:
-        - image: sandbox:latest
+        - image: 360821545863.dkr.ecr.ap-south-1.amazonaws.com/flowent-sandbox:latest
           imagePullPolicy: IfNotPresent
           name: main-sandbox-container
           resources:
