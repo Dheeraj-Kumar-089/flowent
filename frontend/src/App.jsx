@@ -60,12 +60,9 @@ function App() {
   const socketInstance = useRef(null);
   const fitAddonInstance = useRef(null);
 
-  // Helper for agent URL
+  // Helper for same-origin agent routing (prevents ERR_CERT_AUTHORITY_INVALID on subdomains)
   const getAgentBaseUrl = (sId) => {
-    const host = window.location.hostname;
-    const protocol = window.location.protocol;
-    const baseDomain = host.includes('localhost') ? 'localhost' : host;
-    return `${protocol}//${sId}.agent.${baseDomain}`;
+    return `/api/agent/${sId}`;
   };
 
   const getPreviewBaseUrl = (sId) => {
@@ -423,7 +420,7 @@ function App() {
       let isReady = false;
       let initialFiles = [];
       let attempts = 0;
-      const maxAttempts = 45; // 45 * 1.5s = ~68s total boot allowance
+      const maxAttempts = 100; // 100 * 1.5s = 150s total boot allowance
 
       while (!isReady && attempts < maxAttempts) {
         attempts++;
@@ -519,8 +516,8 @@ function App() {
       };
       window.addEventListener('resize', handleResize);
 
-      const socketUrl = getAgentBaseUrl(sandboxId);
-      const socket = io(socketUrl, {
+      const socket = io('/', {
+        path: `/api/agent/${sandboxId}/socket.io`,
         transports: ['websocket', 'polling']
       });
       socketInstance.current = socket;

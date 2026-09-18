@@ -87,6 +87,16 @@ wsProxy.on('error', (err, req, socket) => {
 });
 
 app.use(async (req, res, next) => {
+    // 1. Check if path starts with /api/agent/:sandboxId
+    if (req.url && req.url.startsWith('/api/agent/')) {
+        const match = req.url.match(/^\/api\/agent\/([^\/\?]+)(.*)/);
+        if (match) {
+            const sandboxId = match[1];
+            req.url = match[2] || '/';
+            return getAgentProxy(sandboxId)(req, res, next);
+        }
+    }
+
     const host = req.headers.host || '';
     const parts = host.split('.');
     const sandboxId = parts[0];
@@ -106,10 +116,25 @@ app.use(async (req, res, next) => {
 const server = http.createServer(app);
 
 server.on('upgrade', (req, socket, head) => {
+    socket.on('error', (err) => console.log('Socket error:', err.message));
+
+    // 1. Check path-based WebSocket: /api/agent/:sandboxId/socket.io/...
+    if (req.url && req.url.startsWith('/api/agent/')) {
+        const match = req.url.match(/^\/api\/agent\/([^\/\?]+)(.*)/);
+        if (match) {
+            const sandboxId = match[1];
+            req.url = match[2] || '/';
+            wsProxy.ws(req, socket, { target: `http://sandbox-service-${sandboxId}:3000` }, head)
+                .catch((err) => {
+                    console.error('WS upgrade proxy error for agent path:', err.message);
+                    socket.destroy();
+                });
+            return;
+        }
+    }
+
     const host = req.headers.host || '';
     if (!host) { socket.destroy(); return; }
-
-    socket.on('error', (err) => console.log('Socket error:', err.message));
 
     const parts = host.split('.');
     const sandboxId = parts[0];

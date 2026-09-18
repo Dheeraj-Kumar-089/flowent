@@ -84,6 +84,14 @@ spec:
   - http:
       paths:
       - pathType: Prefix
+        path: "/api/agent"
+        backend:
+          service:
+            name: router-service
+            port:
+              number: 80
+
+      - pathType: Prefix
         path: "/api/sandbox"
         backend:
           service:
