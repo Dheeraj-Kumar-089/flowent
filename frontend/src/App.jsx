@@ -136,11 +136,12 @@ function App() {
   };
 
   // Open file in Editor
-  const handleOpenFile = async (filepath) => {
-    if (!sandboxId) return;
+  const handleOpenFile = async (filepath, sId = sandboxId) => {
+    const targetId = sId || sandboxId;
+    if (!targetId) return;
     try {
       const response = await fetch(
-        `${getAgentBaseUrl(sandboxId)}/read-files?files=${encodeURIComponent(filepath)}&t=${Date.now()}`
+        `${getAgentBaseUrl(targetId)}/read-files?files=${encodeURIComponent(filepath)}&t=${Date.now()}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -163,6 +164,18 @@ function App() {
       console.error('Error reading file:', err);
     }
   };
+
+  // When entering ready status, fetch files immediately and auto-select primary file
+  useEffect(() => {
+    if (status === 'ready' && sandboxId) {
+      loadFilesList(sandboxId).then(files => {
+        if (files && files.length > 0) {
+          const target = files.includes('src/App.jsx') ? 'src/App.jsx' : files[0];
+          handleOpenFile(target, sandboxId);
+        }
+      });
+    }
+  }, [status, sandboxId]);
 
   // Save changes to active file manually
   const handleSaveFile = useCallback(async () => {
@@ -408,19 +421,24 @@ function App() {
       // Step 4: Poll agent endpoint until 200 OK
       const agentUrl = `${getAgentBaseUrl(data.sandboxId)}/list-files`;
       let isReady = false;
+      let initialFiles = [];
       let attempts = 0;
-      const maxAttempts = 30;
+      const maxAttempts = 45; // 45 * 1.5s = ~68s total boot allowance
 
       while (!isReady && attempts < maxAttempts) {
         attempts++;
         try {
-          const res = await fetch(agentUrl);
+          const res = await fetch(`${agentUrl}?t=${Date.now()}`);
           if (res.ok) {
+            const fileData = await res.json().catch(() => ({}));
+            initialFiles = fileData.files || [];
             isReady = true;
             break;
           }
-        } catch (e) {}
-        await new Promise(r => setTimeout(r, 2000));
+        } catch (e) {
+          // Network / TLS handshake in progress while pod routes initialize
+        }
+        await new Promise(r => setTimeout(r, 1500));
       }
 
       if (!isReady) {
@@ -430,14 +448,16 @@ function App() {
       stepsCopy[3].status = 'completed';
       setStartSteps([...stepsCopy]);
 
-      const files = await loadFilesList(data.sandboxId);
-      if (files.includes('src/App.jsx')) {
-        await handleOpenFile('src/App.jsx');
+      setFilesList(initialFiles);
+      if (initialFiles.includes('src/App.jsx')) {
+        await handleOpenFile('src/App.jsx', data.sandboxId);
+      } else if (initialFiles.length > 0) {
+        await handleOpenFile(initialFiles[0], data.sandboxId);
       }
 
       setTimeout(() => {
         setStatus('ready');
-      }, 800);
+      }, 500);
 
     } catch (err) {
       console.error('Sandbox start error:', err);

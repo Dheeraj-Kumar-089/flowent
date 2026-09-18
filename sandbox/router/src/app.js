@@ -62,6 +62,11 @@ function getAgentProxy(sandboxId) {
             target,
             changeOrigin: true,
             ws: true,
+            onProxyRes: (proxyRes, req, res) => {
+                proxyRes.headers['access-control-allow-origin'] = '*';
+                proxyRes.headers['access-control-allow-methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
+                proxyRes.headers['access-control-allow-headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization';
+            },
             onError: (err, req, res) => {
                 console.error(`Agent proxy error for sandbox ${sandboxId}:`, err.message);
                 if (res && res.writeHead && !res.headersSent) {
