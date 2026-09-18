@@ -1,14 +1,80 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import Prism from 'prismjs';
+import 'prismjs/themes/prism-tomorrow.css';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-jsx';
+import 'prismjs/components/prism-typescript';
+import 'prismjs/components/prism-tsx';
+import 'prismjs/components/prism-css';
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-markdown';
+import 'prismjs/components/prism-bash';
+
+// Helper to determine Prism language grammar from file extension
+const getLanguageForFile = (filepath) => {
+  if (!filepath) return 'javascript';
+  const ext = filepath.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'jsx':
+      return 'jsx';
+    case 'tsx':
+      return 'tsx';
+    case 'ts':
+      return 'typescript';
+    case 'js':
+    case 'mjs':
+    case 'cjs':
+      return 'javascript';
+    case 'css':
+      return 'css';
+    case 'json':
+      return 'json';
+    case 'md':
+    case 'markdown':
+      return 'markdown';
+    case 'html':
+    case 'htm':
+    case 'svg':
+      return 'html';
+    case 'sh':
+    case 'bash':
+    case 'dockerfile':
+      return 'bash';
+    default:
+      return 'javascript';
+  }
+};
 
 export default function Editor({ file, content, onChange, onSave, isSaving, isFullscreen, onToggleFullscreen }) {
-  const lineCount = content.split('\n').length;
+  const lineCount = (content || '').split('\n').length;
   const textareaRef = useRef(null);
   const lineNumbersRef = useRef(null);
+  const codeDisplayRef = useRef(null);
 
-  // Sync scroll of line numbers column with textarea
+  const lang = useMemo(() => getLanguageForFile(file), [file]);
+
+  // Syntax highlighted HTML via Prism
+  const highlightedHtml = useMemo(() => {
+    try {
+      const grammar = Prism.languages[lang] || Prism.languages.javascript;
+      return Prism.highlight(content || '', grammar, lang);
+    } catch (e) {
+      return (content || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+  }, [content, lang]);
+
+  // Sync scrolling of line numbers, syntax highlight pre, and editable textarea
   const handleScroll = () => {
-    if (textareaRef.current && lineNumbersRef.current) {
-      lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+    if (textareaRef.current) {
+      const { scrollTop, scrollLeft } = textareaRef.current;
+      if (lineNumbersRef.current) lineNumbersRef.current.scrollTop = scrollTop;
+      if (codeDisplayRef.current) {
+        codeDisplayRef.current.scrollTop = scrollTop;
+        codeDisplayRef.current.scrollLeft = scrollLeft;
+      }
     }
   };
 
@@ -24,7 +90,7 @@ export default function Editor({ file, content, onChange, onSave, isSaving, isFu
     return () => window.removeEventListener('keydown', handleKeySave);
   }, [onSave]);
 
-  // Tab key handler to insert 2 spaces instead of tab focus out
+  // Tab key handler to insert 2 spaces
   const handleKeyDown = (e) => {
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -33,7 +99,6 @@ export default function Editor({ file, content, onChange, onSave, isSaving, isFu
       const newContent = content.substring(0, start) + '  ' + content.substring(end);
       onChange(newContent);
       
-      // Keep cursor position
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 2;
@@ -43,15 +108,16 @@ export default function Editor({ file, content, onChange, onSave, isSaving, isFu
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#101217] text-[#eaecef] overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-[#0d0e12] text-[#eaecef] overflow-hidden">
       
       {/* Editor Tab Bar */}
-      <div className="flex items-center justify-between px-3.5 py-1.5 bg-[#0b0c0f] border-b border-white/5 shrink-0 select-none">
+      <div className="flex items-center justify-between px-3.5 py-1.5 bg-[#090a0d] border-b border-white/5 shrink-0 select-none">
         <div className="flex items-center gap-2">
-          <svg className="w-3.5 h-3.5 text-[#e09f3e]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <span className="text-[#eaecef] font-mono text-xs font-medium">{file || 'untitled'}</span>
+          <span className="w-2 h-2 rounded-full bg-[#e09f3e]"></span>
+          <span className="text-[#eaecef] font-mono text-xs font-semibold tracking-tight">{file || 'untitled'}</span>
+          <span className="text-[10px] font-mono uppercase bg-[#181b23] text-[#8a8f9d] px-1.5 py-0.5 rounded-[5px] border border-white/5">
+            {lang}
+          </span>
         </div>
         
         <div className="flex items-center gap-2">
@@ -83,12 +149,13 @@ export default function Editor({ file, content, onChange, onSave, isSaving, isFu
         </div>
       </div>
 
-      {/* Editor Content Area */}
-      <div className="flex-1 flex overflow-hidden font-mono text-[13px] relative bg-[#101217]">
+      {/* Editor Content Area with Prism Syntax Highlighting */}
+      <div className="flex-1 flex overflow-hidden font-mono text-[13px] relative bg-[#0d0e12]">
+        
         {/* Line Numbers Column */}
         <div
           ref={lineNumbersRef}
-          className="py-3 select-none text-right pr-3 pl-3 text-[#4b5563] bg-[#0b0c0f] border-r border-white/5 min-w-[3rem] overflow-hidden"
+          className="py-3 select-none text-right pr-3 pl-3 text-[#4b5563] bg-[#090a0d] border-r border-white/5 min-w-[3.2rem] overflow-hidden"
         >
           {Array.from({ length: Math.max(1, lineCount) }).map((_, idx) => (
             <div key={idx} className="h-6 font-mono text-xs leading-6 select-none">
@@ -97,16 +164,38 @@ export default function Editor({ file, content, onChange, onSave, isSaving, isFu
           ))}
         </div>
 
-        {/* Textarea Code Space */}
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onScroll={handleScroll}
-          className="flex-1 p-3 bg-transparent text-[#e2e8f0] outline-none resize-none overflow-y-auto h-full border-none focus:ring-0 leading-6 font-mono selection:bg-[#e09f3e]/20"
-          spellCheck="false"
-        />
+        {/* Editor Code Container */}
+        <div className="relative flex-1 h-full overflow-hidden">
+          
+          {/* Syntax Highlighted Colorful Code Layer (Behind) */}
+          <pre
+            ref={codeDisplayRef}
+            aria-hidden="true"
+            className="absolute inset-0 m-0 p-3 pointer-events-none overflow-hidden whitespace-pre font-mono text-[13px] leading-6 bg-transparent text-[#eaecef]"
+            style={{ tabSize: 2 }}
+          >
+            <code
+              className={`language-${lang}`}
+              dangerouslySetInnerHTML={{ __html: highlightedHtml + '<br />' }}
+            />
+          </pre>
+
+          {/* Interactive Editable Transparent Textarea Layer (Foreground) */}
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onScroll={handleScroll}
+            className="absolute inset-0 w-full h-full p-3 bg-transparent text-transparent caret-white outline-none resize-none font-mono text-[13px] leading-6 whitespace-pre overflow-auto border-none focus:ring-0 selection:bg-[#e09f3e]/30 z-10"
+            style={{ tabSize: 2 }}
+            spellCheck="false"
+            autoCapitalize="off"
+            autoComplete="off"
+            autoCorrect="off"
+          />
+        </div>
+
       </div>
     </div>
   );

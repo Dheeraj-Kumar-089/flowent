@@ -116,20 +116,16 @@ app.use(async (req, res, next) => {
 const server = http.createServer(app);
 
 server.on('upgrade', (req, socket, head) => {
-    socket.on('error', (err) => console.log('Socket error:', err.message));
-
     // 1. Check path-based WebSocket: /api/agent/:sandboxId/socket.io/...
     if (req.url && req.url.startsWith('/api/agent/')) {
         const match = req.url.match(/^\/api\/agent\/([^\/\?]+)(.*)/);
         if (match) {
             const sandboxId = match[1];
             req.url = match[2] || '/';
-            wsProxy.ws(req, socket, { target: `http://sandbox-service-${sandboxId}:3000` }, head)
-                .catch((err) => {
-                    console.error('WS upgrade proxy error for agent path:', err.message);
-                    socket.destroy();
-                });
-            return;
+            const agentProxy = getAgentProxy(sandboxId);
+            if (agentProxy && typeof agentProxy.upgrade === 'function') {
+                return agentProxy.upgrade(req, socket, head);
+            }
         }
     }
 
@@ -141,17 +137,15 @@ server.on('upgrade', (req, socket, head) => {
     const type = parts[1];
 
     if (type === 'agent') {
-        wsProxy.ws(req, socket, { target: `http://sandbox-service-${sandboxId}:3000` }, head)
-            .catch((err) => {
-                console.error('WS upgrade proxy error for agent:', err.message);
-                socket.destroy();
-            });
+        const agentProxy = getAgentProxy(sandboxId);
+        if (agentProxy && typeof agentProxy.upgrade === 'function') {
+            return agentProxy.upgrade(req, socket, head);
+        }
     } else if (type === 'preview') {
-        wsProxy.ws(req, socket, { target: `http://sandbox-service-${sandboxId}:80` }, head)
-            .catch((err) => {
-                console.error('WS upgrade proxy error for preview:', err.message);
-                socket.destroy();
-            });
+        const previewProxy = getProxy(sandboxId);
+        if (previewProxy && typeof previewProxy.upgrade === 'function') {
+            return previewProxy.upgrade(req, socket, head);
+        }
     } else {
         socket.destroy();
     }
