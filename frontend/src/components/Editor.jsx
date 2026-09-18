@@ -171,11 +171,12 @@ export default function Editor({ file, content, onChange, onSave, isSaving, isFu
           <pre
             ref={codeDisplayRef}
             aria-hidden="true"
-            className="absolute inset-0 m-0 p-3 pointer-events-none overflow-hidden whitespace-pre font-mono text-[13px] leading-6 bg-transparent text-[#eaecef]"
-            style={{ tabSize: 2 }}
+            className="absolute inset-0 m-0 p-3 pointer-events-none overflow-hidden whitespace-pre bg-transparent text-[#eaecef]"
+            style={{ tabSize: 2, fontFamily: 'Consolas, Monaco, monospace', fontSize: '13px', lineHeight: '24px', letterSpacing: 'normal', wordSpacing: 'normal' }}
           >
             <code
               className={`language-${lang}`}
+              style={{ fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', letterSpacing: 'inherit', wordSpacing: 'inherit' }}
               dangerouslySetInnerHTML={{ __html: highlightedHtml + '<br />' }}
             />
           </pre>
@@ -187,8 +188,8 @@ export default function Editor({ file, content, onChange, onSave, isSaving, isFu
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             onScroll={handleScroll}
-            className="absolute inset-0 w-full h-full p-3 bg-transparent text-transparent caret-white outline-none resize-none font-mono text-[13px] leading-6 whitespace-pre overflow-auto border-none focus:ring-0 selection:bg-[#e09f3e]/30 z-10"
-            style={{ tabSize: 2 }}
+            className="absolute inset-0 w-full h-full p-3 bg-transparent text-transparent caret-white outline-none resize-none whitespace-pre overflow-auto border-none focus:ring-0 selection:bg-[#e09f3e]/30 z-10"
+            style={{ tabSize: 2, fontFamily: 'Consolas, Monaco, monospace', fontSize: '13px', lineHeight: '24px', letterSpacing: 'normal', wordSpacing: 'normal' }}
             spellCheck="false"
             autoCapitalize="off"
             autoComplete="off"

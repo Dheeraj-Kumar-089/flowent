@@ -2,7 +2,7 @@ import express from 'express';
 import morgan from 'morgan';
 import { createProxyMiddleware } from "http-proxy-middleware";
 import http from 'http';
-import { createProxyServer } from 'httpxy';
+
 
 const app = express();
 app.use(morgan('dev'));
@@ -79,12 +79,7 @@ function getAgentProxy(sandboxId) {
     return agentProxies[sandboxId];
 }
 
-// Single httpxy proxy server for all WebSocket upgrades
-const wsProxy = createProxyServer({ changeOrigin: true });
-wsProxy.on('error', (err, req, socket) => {
-    console.error('WS proxy error:', err.message);
-    socket?.destroy();
-});
+
 
 app.use(async (req, res, next) => {
     // 1. Check if path starts with /api/agent/:sandboxId
@@ -122,9 +117,7 @@ server.on('upgrade', (req, socket, head) => {
         if (match) {
             const sandboxId = match[1];
             req.url = match[2] || '/';
-            return wsProxy.ws(req, socket, head, {
-                target: `http://sandbox-service-${sandboxId}:3000`
-            });
+            return getAgentProxy(sandboxId).upgrade(req, socket, head);
         }
     }
 
@@ -136,13 +129,9 @@ server.on('upgrade', (req, socket, head) => {
     const type = parts[1];
 
     if (type === 'agent') {
-        return wsProxy.ws(req, socket, head, {
-            target: `http://sandbox-service-${sandboxId}:3000`
-        });
+        return getAgentProxy(sandboxId).upgrade(req, socket, head);
     } else if (type === 'preview') {
-        return wsProxy.ws(req, socket, head, {
-            target: `http://sandbox-service-${sandboxId}`
-        });
+        return getProxy(sandboxId).upgrade(req, socket, head);
     } else {
         socket.destroy();
     }
