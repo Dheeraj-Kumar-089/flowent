@@ -37,11 +37,17 @@ function getProxy(sandboxId) {
             target,
             changeOrigin: true,
             ws: true,
+            onProxyRes: (proxyRes, req, res) => {
+                delete proxyRes.headers['x-frame-options'];
+                delete proxyRes.headers['X-Frame-Options'];
+                proxyRes.headers['content-security-policy'] = "frame-ancestors *";
+                proxyRes.headers['access-control-allow-origin'] = "*";
+            },
             onError: (err, req, res) => {
                 console.error(`Preview proxy error for sandbox ${sandboxId}:`, err.message);
                 if (res && res.writeHead && !res.headersSent) {
                     res.writeHead(503, { 'Content-Type': 'text/html' });
-                    res.end('<html><body style="font-family:sans-serif;background:#18181c;color:#e4e4e7;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;"><div style="text-align:center;"><h2>🚀 Sandbox container is starting...</h2><p style="color:#a1a1aa;">Compiling your Vite/React environment. This will automatically load in a few seconds.</p><script>setTimeout(()=>location.reload(), 2500);</script></div></body></html>');
+                    res.end('<html><body style="font-family:sans-serif;background:#0e0f12;color:#eaecef;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;"><div style="text-align:center;"><h2>🚀 Compiling Workspace Environment...</h2><p style="color:#8a8f9d;font-size:13px;">Vite dev server is booting up. Will refresh automatically...</p><script>setTimeout(()=>location.reload(), 2000);</script></div></body></html>');
                 }
             }
         });

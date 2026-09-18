@@ -4,27 +4,29 @@
   --font-sans: "Geist", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   
-  --color-bg-base: #121318;
-  --color-surface-dim: #121318;
-  --color-surface-bright: #38393f;
-  --color-surface-container-lowest: #0d0e13;
-  --color-surface-container-low: #1a1b21;
-  --color-surface-container: #1e1f25;
-  --color-surface-container-high: #292a2f;
-  --color-surface-container-highest: #34343a;
+  --color-bg-base: #0b0c0e;
+  --color-surface-dim: #07080a;
+  --color-surface-bright: #242730;
+  --color-surface-container-lowest: #050507;
+  --color-surface-container-low: #0f1014;
+  --color-surface-container: #14161c;
+  --color-surface-container-high: #1a1d24;
+  --color-surface-container-highest: #222630;
   
-  --color-on-surface: #e3e1e9;
-  --color-on-surface-variant: #c8c4d6;
-  --color-outline: #928fa0;
+  --color-on-surface: #eaecef;
+  --color-on-surface-variant: #8a8f9d;
+  --color-outline: #2c303c;
   
-  --color-primary: #c6c0ff;
-  --color-primary-container: #8b80ff;
-  --color-secondary: #44e2cd;
-  --color-secondary-container: #03c6b2;
-  --color-tertiary: #c4c0ff;
+  --color-primary: #e09f3e;
+  --color-primary-container: #b87a28;
+  --color-secondary: #10b981;
+  --color-secondary-container: #059669;
+  --color-tertiary: #60a5fa;
   
-  --color-brand-purple: #7c6ff7;
-  --color-brand-teal: #2dd4bf;
+  --color-brand-amber: #e09f3e;
+  --color-brand-emerald: #10b981;
+  --color-brand-purple: #8b5cf6;
+  --color-brand-teal: #14b8a6;
 }
 
 /* Custom global styles & scrollbars */
@@ -54,31 +56,27 @@ body,
   background: radial-gradient(circle at 50% 0%, rgba(124, 111, 247, 0.12) 0%, transparent 60%);
 }
 
-/* Glassmorphic Recipe */
+/* Glassmorphic & Panel Craft */
 .glass-panel {
-  background: rgba(30, 31, 37, 0.45);
+  background: rgba(20, 22, 28, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 5px !important;
 }
 
 .glass-card {
-  background: rgba(30, 31, 37, 0.4);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgba(20, 22, 28, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+  border-radius: 5px !important;
 }
 
-/* Slow mesh gradient pulse for AI Sidebar */
-.mesh-gradient {
-  background: linear-gradient(135deg, rgba(124, 111, 247, 0.08) 0%, rgba(45, 212, 191, 0.08) 100%);
-  animation: meshPulse 8s ease-in-out infinite alternate;
-}
-
-@keyframes meshPulse {
-  0% { opacity: 0.5; }
-  100% { opacity: 1; }
+/* Strict 5px border-radius across all interactive components */
+button, input, textarea, select, aside, header, nav, section, iframe {
+  border-radius: 5px;
 }
 
 /* Custom Webkit scrollbar matching Stitch guidelines */
