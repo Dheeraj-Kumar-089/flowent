@@ -161,6 +161,7 @@ flowent/
 | `POST` | `/api/sandbox/start` | Spawns a new Kubernetes sandbox pod and returns the sandbox ID & preview URL. |
 | `DELETE` | `/api/sandbox/:id` | Terminates and deletes the sandbox pod and associated service. |
 | `POST` | `/api/sandbox/keepalive/:id` | Refreshes the Redis TTL heartbeat to prevent idle pod cleanup. |
+| `POST` | `/api/sandbox/:id/snapshot` | Zips the workspace volume and uploads a snapshot archive to Amazon S3. |
 
 ### 2. AI Code Generation
 
@@ -187,8 +188,27 @@ flowent/
 | **Frontend UI** | React 19, Vite, Tailwind CSS, Prism.js, Xterm.js, Socket.IO Client |
 | **Microservices Backend** | Node.js, Express.js, Socket.IO, `@kubernetes/client-node`, `node-pty`, `http-proxy-middleware` |
 | **AI & Agentic Framework** | Google Gemini 2.0 / 1.5 Flash, Mistral AI, Tool Calling / Function Calling |
-| **Orchestration & Cloud** | Kubernetes (K3s), Docker, NGINX Ingress Controller, AWS EC2 |
+| **Orchestration & Cloud** | Kubernetes (K3s), Docker, NGINX Ingress Controller, AWS EC2, Amazon ECR, Amazon S3 |
 | **State & Messaging** | Redis (TTL heartbeat & event broker), MongoDB Atlas, RabbitMQ |
+
+---
+
+## ☁️ AWS Cloud Native Architecture (Ship It Track)
+
+Flowent is deployed on AWS production infrastructure leveraging microservices and managed cloud storage:
+
+- **Amazon EC2 (`t3.medium`):** Hosts the K3s Kubernetes control plane, ingress controllers, and dynamic container lifecycle orchestration.
+- **Amazon Elastic Container Registry (ECR):** Houses pre-warmed container runtimes (`flowent-agent`, `flowent-template`) for instant pod startup.
+- **Amazon S3:** Provides automated persistence by capturing zipped workspace snapshots directly from ephemeral container volumes via `@aws-sdk/client-s3`.
+- **AWS VPC & Security Groups:** Isolates container workloads and secures real-time WebSocket / SSE execution streams.
+
+```mermaid
+graph LR
+    Browser([Browser Client]) --> Ingress[NGINX Ingress on EC2]
+    Ingress --> K3s[K3s Sandbox Cluster]
+    K3s -->|Pulls Images| ECR[(Amazon ECR)]
+    K3s -->|Exports Workspace| S3[(Amazon S3 Snapshot Bucket)]
+```
 
 ---
 

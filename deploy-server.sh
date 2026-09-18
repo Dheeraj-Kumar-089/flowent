@@ -16,7 +16,8 @@ REPO_URL="${REPO_URL:-https://github.com/Dheeraj-Kumar-089/flowent.git}"
 K="sudo k3s kubectl"
 
 ENV_KEYS=(GEMINI_API_KEY MISTRAL_API_KEY JWT_SECRET MONGO_URI REDIS_URL
-          GOOGLE_OAUTH_CLIENT_ID GOOGLE_OAUTH_CLIENT_SECRET)
+          GOOGLE_OAUTH_CLIENT_ID GOOGLE_OAUTH_CLIENT_SECRET
+          AWS_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY S3_BUCKET_NAME)
 
 log()  { printf '\n\033[1;36m=== %s\033[0m\n' "$*"; }
 fail() { printf '\n\033[1;31mFAILED: %s\033[0m\n' "$*" >&2; exit 1; }

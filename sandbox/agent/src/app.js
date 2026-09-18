@@ -7,6 +7,8 @@ import http from 'http';
 import pty from 'node-pty';
 import os from 'os';
 import cors from 'cors';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import archiver from "archiver";
 
 const WORKING_DIR = "/workspace"
 
@@ -29,6 +31,15 @@ const io = new Server(httpServer,{
         origin:"*",
         methods:["GET","POST","PATCH","DELETE"],
     }
+});
+
+// ─── S3 Client (credentials injected via K8s pod environment) ───
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION || "ap-south-1",
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
 });
 
 
@@ -285,5 +296,63 @@ app.post("/create-files", async (req, res) => {
         results,
     });
 })
+
+
+/**
+ * @route POST /snapshot
+ * @description Zips the /workspace directory (excluding node_modules, .git, dist) and
+ *              uploads the archive to Amazon S3. Returns the S3 object key on success.
+ */
+app.post("/snapshot", async (req, res) => {
+    const snapshotKey = `snapshots/workspace-${Date.now()}.zip`;
+
+    try {
+        // Build an in-memory zip of /workspace
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        const chunks = [];
+
+        archive.on("data", (chunk) => chunks.push(chunk));
+        archive.on("warning", (err) => {
+            if (err.code !== "ENOENT") throw err;
+        });
+        archive.on("error", (err) => { throw err; });
+
+        // Add the workspace directory, excluding heavy/transient folders
+        archive.glob("**/*", {
+            cwd: WORKING_DIR,
+            ignore: ["node_modules/**", ".git/**", "dist/**"],
+            dot: true,
+        });
+
+        await archive.finalize();
+
+        const fileBuffer = Buffer.concat(chunks);
+
+        // Upload to S3
+        await s3Client.send(
+            new PutObjectCommand({
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: snapshotKey,
+                Body: fileBuffer,
+                ContentType: "application/zip",
+            })
+        );
+
+        console.log(`[Snapshot] Uploaded ${snapshotKey} (${(fileBuffer.length / 1024).toFixed(1)} KB)`);
+
+        return res.json({
+            success: true,
+            message: "Snapshot uploaded to AWS S3 successfully!",
+            key: snapshotKey,
+            size: fileBuffer.length,
+        });
+    } catch (error) {
+        console.error("[Snapshot] S3 upload error:", error);
+        return res.status(500).json({
+            success: false,
+            error: error.message,
+        });
+    }
+});
 
 export default httpServer;

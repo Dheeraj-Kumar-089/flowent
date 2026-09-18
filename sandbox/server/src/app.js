@@ -85,4 +85,28 @@ app.delete("/api/sandbox/:sandboxId", async (req, res) => {
     return res.status(200).json({ message: "Sandbox destroyed", sandboxId });
 });
 
+// ─── S3 Snapshot Proxy ─────────────────────────────────────────────
+// Forwards the snapshot request to the agent sidecar running inside
+// the sandbox pod. The agent zips /workspace and uploads to S3.
+app.post("/api/sandbox/:sandboxId/snapshot", async (req, res) => {
+    const { sandboxId } = req.params;
+    const agentUrl = `http://sandbox-service-${sandboxId}:3000/snapshot`;
+
+    try {
+        const agentRes = await fetch(agentUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+        });
+
+        const data = await agentRes.json();
+        return res.status(agentRes.status).json(data);
+    } catch (err) {
+        console.error(`[Snapshot Proxy] Error reaching agent for ${sandboxId}:`, err.message);
+        return res.status(502).json({
+            success: false,
+            error: `Could not reach sandbox agent: ${err.message}`,
+        });
+    }
+});
+
 export default app;

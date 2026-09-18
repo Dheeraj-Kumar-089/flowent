@@ -79,6 +79,12 @@ export async function createPod(sandboxId) {
                             name: "agent",
                         }
                     ],
+                    env: [
+                        { name: "AWS_REGION", value: process.env.AWS_REGION || "ap-south-1" },
+                        { name: "AWS_ACCESS_KEY_ID", value: process.env.AWS_ACCESS_KEY_ID || "" },
+                        { name: "AWS_SECRET_ACCESS_KEY", value: process.env.AWS_SECRET_ACCESS_KEY || "" },
+                        { name: "S3_BUCKET_NAME", value: process.env.S3_BUCKET_NAME || "" },
+                    ],
                     resources: {
                         limits: {
                             cpu: "300m",

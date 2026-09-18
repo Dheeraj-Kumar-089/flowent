@@ -46,6 +46,26 @@ spec:
                 secretKeyRef:
                   name: flowent-secrets
                   key: JWT_SECRET
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: flowent-secrets
+                  key: AWS_REGION
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: flowent-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: flowent-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: S3_BUCKET_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: flowent-secrets
+                  key: S3_BUCKET_NAME
           livenessProbe:
             httpGet:
               path: /api/sandbox/health

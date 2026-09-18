@@ -53,6 +53,8 @@ function App() {
   const [promptText, setPromptText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
+  const [isSnapshotting, setIsSnapshotting] = useState(false);
+  const [snapshotToast, setSnapshotToast] = useState(null); // { type: 'success'|'error', message, key }
 
   // Refs
   const terminalRef = useRef(null);
@@ -570,6 +572,31 @@ function App() {
     }
   };
 
+  // ─── S3 Snapshot Handler ───
+  const handleSaveToS3 = async () => {
+    if (isSnapshotting || !sandboxId) return;
+    setIsSnapshotting(true);
+    setSnapshotToast(null);
+
+    try {
+      const res = await fetch(`/api/sandbox/${sandboxId}/snapshot`, { method: 'POST' });
+      const data = await res.json();
+
+      if (data.success) {
+        setSnapshotToast({ type: 'success', message: `Snapshot saved! Key: ${data.key}`, key: Date.now() });
+      } else {
+        setSnapshotToast({ type: 'error', message: data.error || 'Upload failed', key: Date.now() });
+      }
+    } catch (err) {
+      console.error('S3 snapshot error:', err);
+      setSnapshotToast({ type: 'error', message: err.message || 'Network error', key: Date.now() });
+    } finally {
+      setIsSnapshotting(false);
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => setSnapshotToast(null), 5000);
+    }
+  };
+
   // Horizontal splitter dragging
   const isDraggingH1 = useRef(false);
   const isDraggingH2 = useRef(false);
@@ -692,6 +719,32 @@ function App() {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
                 <span className="truncate max-w-[130px]">{sandboxId}</span>
               </div>
+
+              {/* S3 Snapshot Button */}
+              <button
+                onClick={handleSaveToS3}
+                disabled={isSnapshotting}
+                className={`hidden sm:flex px-3 py-1.5 text-xs font-mono rounded-[5px] border transition-all items-center gap-1.5 cursor-pointer ${
+                  isSnapshotting
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 cursor-wait'
+                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30 hover:border-amber-500/50'
+                }`}
+              >
+                {isSnapshotting ? (
+                  <>
+                    <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span>Uploading…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>☁️</span>
+                    <span>Save Snapshot to S3</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Mobile View Switcher (Visible only on small screens) */}
@@ -797,6 +850,28 @@ function App() {
               )}
             </div>
           </header>
+
+          {/* S3 Snapshot Toast Notification */}
+          {snapshotToast && (
+            <div
+              key={snapshotToast.key}
+              className={`absolute top-12 right-4 z-50 flex items-center gap-2 px-4 py-2.5 rounded-[5px] border text-xs font-mono shadow-2xl backdrop-blur-sm animate-[slideIn_0.3s_ease-out] ${
+                snapshotToast.type === 'success'
+                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                  : 'bg-red-500/15 border-red-500/30 text-red-400'
+              }`}
+              style={{ animation: 'slideIn 0.3s ease-out' }}
+            >
+              <span className="text-sm">{snapshotToast.type === 'success' ? '✅' : '❌'}</span>
+              <span className="max-w-[320px] truncate">{snapshotToast.message}</span>
+              <button
+                onClick={() => setSnapshotToast(null)}
+                className="ml-2 text-white/40 hover:text-white/80 transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Main 3-Column Resizable Body */}
           <div className="flex-1 flex overflow-hidden relative">
