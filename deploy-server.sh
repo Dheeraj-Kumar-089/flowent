@@ -99,12 +99,12 @@ build() {
   sudo docker save "$ecr_tag" | sudo k3s ctr -n k8s.io images import - >/dev/null \
     || fail "ctr import failed for $tag_name"
 }
-build ai       ./ai-orchestration
-build sandbox  ./sandbox/server
-build router   ./sandbox/router
-build agent    ./sandbox/agent
-build template ./sandbox/template
-build auth     ./auth
+# build ai       ./ai-orchestration
+# build sandbox  ./sandbox/server
+# build router   ./sandbox/router
+# build agent    ./sandbox/agent
+# build template ./sandbox/template
+# build auth     ./auth
 build frontend ./frontend
 
 # ---------------------------------------------------------------- 6. apply

@@ -26,6 +26,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
+    - "projectrs.me"
+    - "*.projectrs.me"
+    - "*.preview.projectrs.me"
+    - "*.agent.projectrs.me"
     - "13.204.81.229.nip.io"
     - "*.13.204.81.229.nip.io"
     - "*.preview.13.204.81.229.nip.io"
@@ -48,7 +52,7 @@ spec:
             port:
               number: 80
 
-  - host: "*.preview.projectrs.me"
+  - host: "*.projectrs.me"
     http:
       paths:
       - pathType: Prefix
@@ -92,7 +96,8 @@ spec:
             port:
               number: 80
 
-  - http:
+  - host: "projectrs.me"
+    http:
       paths:
       - pathType: Prefix
         path: "/api/agent"

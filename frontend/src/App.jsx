@@ -71,7 +71,7 @@ function App() {
     const host = window.location.hostname;
     const protocol = window.location.protocol;
     const baseDomain = host.includes('localhost') ? 'localhost' : host;
-    return `${protocol}//${sId}.preview.${baseDomain}/`;
+    return `${protocol}//${sId}-preview.${baseDomain}/`;
   };
 
   // Check auth session & discover existing active sandbox on mount

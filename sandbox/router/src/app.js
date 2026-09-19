@@ -93,13 +93,15 @@ app.use(async (req, res, next) => {
     }
 
     const host = req.headers.host || '';
-    const parts = host.split('.');
-    const sandboxId = parts[0];
-    const type = parts[1];
-
-    if (type === 'agent') {
+    
+    // Extract subdomain (e.g. sandbox123-preview.projectrs.me -> sandbox123-preview)
+    const subdomain = host.split('.')[0];
+    
+    if (subdomain.endsWith('-agent')) {
+        const sandboxId = subdomain.replace('-agent', '');
         return getAgentProxy(sandboxId)(req, res, next);
-    } else if (type === 'preview') {
+    } else if (subdomain.endsWith('-preview')) {
+        const sandboxId = subdomain.replace('-preview', '');
         return getProxy(sandboxId)(req, res, next);
     }
     
@@ -124,13 +126,13 @@ server.on('upgrade', (req, socket, head) => {
     const host = req.headers.host || '';
     if (!host) { socket.destroy(); return; }
 
-    const parts = host.split('.');
-    const sandboxId = parts[0];
-    const type = parts[1];
+    const subdomain = host.split('.')[0];
 
-    if (type === 'agent') {
+    if (subdomain.endsWith('-agent')) {
+        const sandboxId = subdomain.replace('-agent', '');
         return getAgentProxy(sandboxId).upgrade(req, socket, head);
-    } else if (type === 'preview') {
+    } else if (subdomain.endsWith('-preview')) {
+        const sandboxId = subdomain.replace('-preview', '');
         return getProxy(sandboxId).upgrade(req, socket, head);
     } else {
         socket.destroy();
