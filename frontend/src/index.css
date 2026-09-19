@@ -62,7 +62,7 @@ body,
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 5px !important;
+  border-radius: 0px !important;
 }
 
 .glass-card {
@@ -71,12 +71,17 @@ body,
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
-  border-radius: 5px !important;
+  border-radius: 0px !important;
 }
 
-/* Strict 5px border-radius across all interactive components */
+/* Strict 0px border-radius across all interactive components */
 button, input, textarea, select, aside, header, nav, section, iframe {
-  border-radius: 5px;
+  border-radius: 0px;
+}
+
+/* Override tailwind rounded classes except rounded-full for avatars */
+.rounded, .rounded-sm, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-\[5px\] {
+  border-radius: 0px !important;
 }
 
 /* Custom Webkit scrollbar matching Stitch guidelines */

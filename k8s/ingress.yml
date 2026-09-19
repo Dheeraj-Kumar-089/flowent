@@ -48,6 +48,17 @@ spec:
             port:
               number: 80
 
+  - host: "*.preview.projectrs.me"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: router-service
+            port:
+              number: 80
+
   - host: "*.agent.13.204.81.229.nip.io"
     http:
       paths:

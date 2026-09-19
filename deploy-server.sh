@@ -9,7 +9,7 @@
 
 set -Eeuo pipefail
 
-PUBLIC_HOST="${PUBLIC_HOST:-13.204.81.229.nip.io}"
+PUBLIC_HOST="${PUBLIC_HOST:-projectrs.me}"
 ENV_FILE="${ENV_FILE:-$HOME/flowent.env}"
 REPO_DIR="${REPO_DIR:-$HOME/flowent}"
 REPO_URL="${REPO_URL:-https://github.com/Dheeraj-Kumar-089/flowent.git}"
