@@ -2,6 +2,7 @@ import express from 'express';
 import morgan from 'morgan';
 import { createProxyMiddleware } from "http-proxy-middleware";
 import http from 'http';
+import httpProxy from 'http-proxy';
 
 
 const app = express();
@@ -36,7 +37,7 @@ function getProxy(sandboxId) {
         proxies[sandboxId] = createProxyMiddleware({
             target,
             changeOrigin: true,
-            ws: true,
+            ws: false,
             onProxyRes: (proxyRes, req, res) => {
                 delete proxyRes.headers['x-frame-options'];
                 delete proxyRes.headers['X-Frame-Options'];
@@ -61,7 +62,7 @@ function getAgentProxy(sandboxId) {
         agentProxies[sandboxId] = createProxyMiddleware({
             target,
             changeOrigin: true,
-            ws: true,
+            ws: false,
             onProxyRes: (proxyRes, req, res) => {
                 proxyRes.headers['access-control-allow-origin'] = '*';
                 proxyRes.headers['access-control-allow-methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
@@ -78,8 +79,6 @@ function getAgentProxy(sandboxId) {
     }
     return agentProxies[sandboxId];
 }
-
-
 
 app.use(async (req, res, next) => {
     // 1. Check if path starts with /api/agent/:sandboxId
@@ -103,37 +102,65 @@ app.use(async (req, res, next) => {
     } else if (subdomain.endsWith('-preview')) {
         const sandboxId = subdomain.replace('-preview', '');
         return getProxy(sandboxId)(req, res, next);
+    } else if (host.includes('.preview.')) {
+        const sandboxId = host.split('.preview.')[0];
+        return getProxy(sandboxId)(req, res, next);
     }
     
     // Pass-through for any other requests
     next();
 });
 
+// Dedicated WebSocket proxy using battle-tested http-proxy
+const wsProxy = httpProxy.createProxyServer({
+    changeOrigin: true,
+    ws: true
+});
+
+wsProxy.on('error', (err, req, socket) => {
+    console.error(`[WebSocket Proxy Error]:`, err.message);
+    try {
+        if (socket && !socket.destroyed) {
+            socket.destroy();
+        }
+    } catch (_) {}
+});
+
 // Create the HTTP server explicitly
 const server = http.createServer(app);
 
 server.on('upgrade', (req, socket, head) => {
-    // 1. Check path-based WebSocket: /api/agent/:sandboxId/socket.io/...
+    // 1. Check path-based WebSocket: /api/agent/:sandboxId/...
     if (req.url && req.url.startsWith('/api/agent/')) {
         const match = req.url.match(/^\/api\/agent\/([^\/\?]+)(.*)/);
         if (match) {
             const sandboxId = match[1];
             req.url = match[2] || '/';
-            return getAgentProxy(sandboxId).upgrade(req, socket, head);
+            const target = `http://sandbox-service-${sandboxId}:3000`;
+            return wsProxy.ws(req, socket, head, { target });
         }
     }
 
     const host = req.headers.host || '';
-    if (!host) { socket.destroy(); return; }
+    if (!host) {
+        socket.destroy();
+        return;
+    }
 
     const subdomain = host.split('.')[0];
 
     if (subdomain.endsWith('-agent')) {
         const sandboxId = subdomain.replace('-agent', '');
-        return getAgentProxy(sandboxId).upgrade(req, socket, head);
+        const target = `http://sandbox-service-${sandboxId}:3000`;
+        return wsProxy.ws(req, socket, head, { target });
     } else if (subdomain.endsWith('-preview')) {
         const sandboxId = subdomain.replace('-preview', '');
-        return getProxy(sandboxId).upgrade(req, socket, head);
+        const target = `http://sandbox-service-${sandboxId}`;
+        return wsProxy.ws(req, socket, head, { target });
+    } else if (host.includes('.preview.')) {
+        const sandboxId = host.split('.preview.')[0];
+        const target = `http://sandbox-service-${sandboxId}`;
+        return wsProxy.ws(req, socket, head, { target });
     } else {
         socket.destroy();
     }

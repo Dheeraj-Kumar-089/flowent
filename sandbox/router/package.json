@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^5.2.1",
+    "http-proxy": "^1.18.1",
     "http-proxy-middleware": "^4.1.1",
     "httpxy": "^0.5.4",
     "ioredis": "^5.11.1",

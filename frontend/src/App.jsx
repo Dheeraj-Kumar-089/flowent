@@ -200,7 +200,6 @@ function App() {
           ...prev,
           originalContent: prev.currentContent
         }));
-        setPreviewKey(prev => prev + 1);
       }
     } catch (err) {
       console.error('Error saving file:', err);
@@ -324,7 +323,6 @@ function App() {
 
       // Refresh files list and hot-reload preview
       const updatedFiles = await loadFilesList(sandboxId);
-      setPreviewKey(prev => prev + 1);
 
       // If user had a file open, reload it; otherwise open src/App.jsx automatically
       if (selectedFile) {
@@ -394,7 +392,7 @@ function App() {
 
       const data = await response.json();
       setSandboxId(data.sandboxId);
-      setPreviewUrl(data.previewUrl);
+      setPreviewUrl(getPreviewBaseUrl(data.sandboxId));
       setExistingSandboxId(data.sandboxId);
       localStorage.setItem('flowent_active_sandbox', data.sandboxId);
 
@@ -705,7 +703,7 @@ function App() {
           {/* Top IDE Header Bar */}
           <header className="h-11 px-3 bg-[#0e1015] border-b border-white/5 flex items-center justify-between shrink-0 select-none z-30">
             <div className="flex items-center gap-3">
-              <a href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+              <a href="/" onClick={(e) => { e.preventDefault(); window.location.href = '/'; }} className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
                 <div className="w-6 h-6 bg-[#e09f3e] rounded-[5px] flex items-center justify-center text-black font-bold">
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-8-4-8 4v10l8 4 8-4V7z" />

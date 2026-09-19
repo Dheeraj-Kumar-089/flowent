@@ -44,15 +44,16 @@ app.post("/api/sandbox/start", async (req, res) => {
 
         console.log(`[Sandbox Server] Created Pod and Service for sandboxId: ${sandboxId}`);
 
-        const protocol = req.headers[ 'x-forwarded-proto' ] || (req.secure ? 'https' : 'http');
-        const incomingHost = req.headers.host || 'localhost';
+        const incomingHost = req.headers.host || 'projectrs.me';
         const domainOnly = incomingHost.split(':')[ 0 ];
         const baseDomain = domainOnly.includes('localhost') ? 'localhost' : domainOnly;
 
         return res.status(201).json({
             message: "Sandbox environment created successfully",
             sandboxId,
-            previewUrl: `${protocol}://${sandboxId}.preview.${baseDomain}`
+            previewUrl: baseDomain === 'localhost'
+                ? `http://${sandboxId}-preview.localhost:5173/`
+                : `https://${sandboxId}-preview.${baseDomain}/`
         });
     } catch (err) {
         console.error("[Sandbox Server] Error spinning up sandbox in cluster:", err);
