@@ -705,14 +705,14 @@ function App() {
           {/* Top IDE Header Bar */}
           <header className="h-11 px-3 bg-[#0e1015] border-b border-white/5 flex items-center justify-between shrink-0 select-none z-30">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
+              <a href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
                 <div className="w-6 h-6 bg-[#e09f3e] rounded-[5px] flex items-center justify-center text-black font-bold">
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-8-4-8 4v10l8 4 8-4V7z" />
                   </svg>
                 </div>
                 <span className="font-bold text-xs tracking-tight text-white">flowent</span>
-              </div>
+              </a>
 
               {/* Active container badge */}
               <div className="flex items-center gap-1.5 px-2 py-0.5 bg-[#14161c] border border-white/5 rounded-[5px] text-[11px] font-mono text-[#8a8f9d]">

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 export default function AIChat({
   chatHistory,
@@ -38,7 +39,13 @@ export default function AIChat({
                   : 'bg-[#14161c] text-[#eaecef] border border-white/5'
               }`}
             >
-              {msg.text}
+              {msg.sender === 'ai' ? (
+                <div className="prose prose-invert prose-sm max-w-none">
+                  <ReactMarkdown>{msg.text}</ReactMarkdown>
+                </div>
+              ) : (
+                msg.text
+              )}
 
               {/* Streaming execution logs (thinking process) */}
               {msg.logs && msg.logs.length > 0 && (
