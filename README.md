@@ -6,8 +6,9 @@ Flowent is a cloud-native, agentic developer platform that provisions isolated K
 
 ## 🌐 Live Production Deployment
 
-- **Live URL**: [https://13.204.81.229.nip.io](https://13.204.81.229.nip.io/)
-- **Infrastructure**: AWS EC2 (`t3.medium`) running K3s (Lightweight Kubernetes) with NGINX Ingress Controller.
+- **Live Production URL**: [https://projectrs.me](https://projectrs.me)
+- **SSL & Encryption**: Let's Encrypt Wildcard TLS (`projectrs.me`, `*.projectrs.me`) with automated host-level SSL termination.
+- **Infrastructure**: AWS EC2 (`t3.medium`, `ap-south-1`) running K3s (Lightweight Kubernetes), NGINX Ingress Controller, Amazon ECR, and Amazon S3.
 
 ---
 
@@ -34,13 +35,15 @@ Flowent is a cloud-native, agentic developer platform that provisions isolated K
 
 ### 💻 5. In-Browser Interactive Terminal Console
 - **Full PTY Emulation:** Powered by `node-pty` in the backend and `@xterm/xterm` in the frontend.
-- **WebSocket Streaming:** Direct bidirectional terminal stream connected over same-origin WebSocket (`/api/agent/<sandboxId>/socket.io`).
-- **Interactive Shell Features:** Run shell commands, inspect directories, install npm packages, and view live stdout/stderr.
+- **Dedicated WebSocket Proxying:** Uses high-throughput, standalone `http-proxy` streaming to forward terminal frames without dropouts or socket leaks (`/api/agent/<sandboxId>/socket.io`).
+- **Interactive Shell Features:** Run bash/sh commands, install dependencies with npm, inspect filesystem hierarchies, and view live stdout/stderr streams.
 
-### 🌐 6. Embedded Live Preview Engine
+### 🌐 6. Embedded Live Preview Engine & Instant HMR
 - **Sandboxed Iframe:** Renders the live application within the workspace IDE.
+- **Single-Level Subdomain Architecture:** Previews are hosted at `https://<sandboxId>-preview.projectrs.me/`, guaranteeing full compliance with Wildcard SSL (`*.projectrs.me`) and preventing browser "Not Secure" mixed-content flags.
+- **Flicker-Free Hot Module Replacement (HMR):** Edits update dynamically via Vite's native WebSocket HMR protocol without white-screen iframe reloading.
 - **Frame-Ancestors & CSP Stripping:** Custom reverse proxy headers (`Content-Security-Policy: frame-ancestors *`) ensure secure, block-free embedding.
-- **Independent Tab Support:** Quick-action button to open the preview in a dedicated browser tab (`https://<sandboxId>.preview.13.204.81.229.nip.io`).
+- **Independent Tab Support:** Quick-action button to launch the preview in a dedicated browser tab.
 
 ### 📐 7. Resizable Panels & Mobile Responsiveness
 - **Draggable Splitters:** Seamlessly adjust widths between the sidebar, code editor, and live preview/terminal panels.
@@ -52,9 +55,14 @@ Flowent is a cloud-native, agentic developer platform that provisions isolated K
 - **Resource Control:** Enforces one active container per user to optimize cluster memory and CPU utilization.
 - **Profile Controls:** User menu dropdown provides options to **Create New Sandbox (Reset)** or **Destroy Sandbox**.
 
-### 🔐 9. Authentication & Security
+### ☁️ 9. Automated AWS S3 Workspace Snapshots
+- **One-Click Workspace Export:** Direct IDE button to bundle and compress `/workspace` files into a `.tar.gz` archive.
+- **Direct S3 Upload:** The in-pod agent sidecar streams compressed archives directly to Amazon S3 (`flowent-snapshots-dev`) using `@aws-sdk/client-s3`.
+- **Zero Work Loss:** Workspaces can be archived before pod eviction or container shutdown.
+
+### 🔐 10. Authentication & Security
 - **Google OAuth 2.0:** Secure single sign-on with session cookies and JWT verification.
-- **Same-Origin API Routing:** Prevents cross-subdomain certificate errors (`ERR_CERT_AUTHORITY_INVALID`) by routing all agent communication through `/api/agent/<sandboxId>/`.
+- **Same-Origin API Routing:** Prevents cross-subdomain certificate errors by routing all agent communication through `/api/agent/<sandboxId>/`.
 
 ---
 
@@ -186,9 +194,10 @@ flowent/
 | Domain | Technologies |
 | :--- | :--- |
 | **Frontend UI** | React 19, Vite, Tailwind CSS, Prism.js, Xterm.js, Socket.IO Client |
-| **Microservices Backend** | Node.js, Express.js, Socket.IO, `@kubernetes/client-node`, `node-pty`, `http-proxy-middleware` |
+| **Microservices Backend** | Node.js, Express.js, Socket.IO, `@kubernetes/client-node`, `node-pty`, `http-proxy`, `http-proxy-middleware`, `@aws-sdk/client-s3`, `archiver` |
 | **AI & Agentic Framework** | Google Gemini 2.0 / 1.5 Flash, Mistral AI, Tool Calling / Function Calling |
 | **Orchestration & Cloud** | Kubernetes (K3s), Docker, NGINX Ingress Controller, AWS EC2, Amazon ECR, Amazon S3 |
+| **Security & Networking** | Let's Encrypt Wildcard SSL, Certbot DNS-01, Namecheap DNS, Host Nginx Reverse Proxy |
 | **State & Messaging** | Redis (TTL heartbeat & event broker), MongoDB Atlas, RabbitMQ |
 
 ---
@@ -198,8 +207,8 @@ flowent/
 Flowent is deployed on AWS production infrastructure leveraging microservices and managed cloud storage:
 
 - **Amazon EC2 (`t3.medium`):** Hosts the K3s Kubernetes control plane, ingress controllers, and dynamic container lifecycle orchestration.
-- **Amazon Elastic Container Registry (ECR):** Houses pre-warmed container runtimes (`flowent-agent`, `flowent-template`) for instant pod startup.
-- **Amazon S3:** Provides automated persistence by capturing zipped workspace snapshots directly from ephemeral container volumes via `@aws-sdk/client-s3`.
+- **Amazon Elastic Container Registry (ECR):** Houses pre-warmed container runtimes (`flowent-agent`, `flowent-template`, `flowent-router`, `flowent-sandbox`, `flowent-frontend`) for instant pod startup.
+- **Amazon S3:** Provides automated persistence by capturing zipped workspace snapshots directly from ephemeral container volumes via `@aws-sdk/client-s3` into `flowent-snapshots-dev`.
 - **AWS VPC & Security Groups:** Isolates container workloads and secures real-time WebSocket / SSE execution streams.
 
 ```mermaid
@@ -235,6 +244,10 @@ graph LR
    JWT_SECRET=your_jwt_secret
    MONGO_URI=your_mongo_connection_string
    REDIS_URL=redis://localhost:6379
+   AWS_REGION=ap-south-1
+   AWS_ACCESS_KEY_ID=your_aws_key
+   AWS_SECRET_ACCESS_KEY=your_aws_secret
+   S3_BUCKET_NAME=flowent-snapshots-dev
    ```
 
 3. **Start local cluster & ingress:**
@@ -258,9 +271,12 @@ graph LR
    curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -
    sudo kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
    ```
-3. **Execute deployment script:**
+3. **Configure DNS & Wildcard SSL:**
+   - Add Namecheap A Records for `@` and `*` pointing to the EC2 Elastic IP.
+   - Run Certbot with DNS challenge to obtain `projectrs.me` and `*.projectrs.me` SSL certificates.
+4. **Execute deployment script:**
    ```bash
-   bash deploy-server.sh <YOUR_SERVER_IP>.nip.io
+   bash deploy-server.sh projectrs.me
    ```
 
 ---
