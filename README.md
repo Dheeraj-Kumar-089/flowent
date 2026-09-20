@@ -84,11 +84,11 @@ graph TD
     end
     
     subgraph "Dynamic Pod Cluster"
-        SandboxSvc -->|K8s API (RBAC)| Pod[Sandbox Pod]
-        Pod --> Init[Init Container: Seed Template]
-        Init -->|Populate| Vol[(Shared /workspace Volume)]
-        Pod --> Vite[Vite Dev Server :5173]
-        Pod --> Agent[Agent API & Socket :3000]
+        SandboxSvc -->|"K8s API (RBAC)"| Pod[Sandbox Pod]
+        Pod --> Init["Init Container: Seed Template"]
+        Init -->|Populate| Vol[("Shared /workspace Volume")]
+        Pod --> Vite["Vite Dev Server :5173"]
+        Pod --> Agent["Agent API & Socket :3000"]
         Vol <--> Vite
         Vol <--> Agent
         Router -->|Proxy Preview| Vite
