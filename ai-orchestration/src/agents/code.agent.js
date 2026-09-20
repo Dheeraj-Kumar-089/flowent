@@ -4,7 +4,7 @@ import { listFiles, readFiles, updateFiles } from "./tools.js";
 import { createAgent } from "langchain";
 
 const model = new ChatGoogle({
-    model: "gemini-3.1-flash-lite",
+    model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
     apiKey: process.env.GEMINI_API_KEY,
 });
 
