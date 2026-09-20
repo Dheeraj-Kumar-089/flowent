@@ -281,6 +281,4 @@ graph LR
 
 ---
 
-## 📄 License
 
-Distributed under the [MIT License](LICENSE). Built with modern cloud-native standards.
