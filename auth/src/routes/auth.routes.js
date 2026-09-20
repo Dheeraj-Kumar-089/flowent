@@ -38,8 +38,8 @@ router.get('/google/callback', passport.authenticate('google', {
             email: emails?.[0]?.value
         });
 
-        // Generate JWT token
-        const jwtSecret = process.env.JWT_SECRET || '***REMOVED***';
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) throw new Error("JWT_SECRET is not set in environment variables");
         const token = jwt.sign(
             { id: user._id, name: user.name, email: user.email, avatar: user.avatar },
             jwtSecret,
@@ -70,7 +70,10 @@ router.get('/me', async (req, res) => {
             return res.status(200).json({ loggedIn: false, user: null });
         }
 
-        const jwtSecret = process.env.JWT_SECRET || '***REMOVED***';
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            return res.status(500).json({ loggedIn: false, error: "JWT_SECRET not configured" });
+        }
         const decoded = jwt.verify(token, jwtSecret);
         
         let user = null;
